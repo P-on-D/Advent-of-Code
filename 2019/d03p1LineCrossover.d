@@ -35,13 +35,13 @@ unittest {
   , Leg(Dir.Down, 3)
   , Leg(Dir.Right, 9999)
   ]);
-/*
+
   struct Pt { int x, y; }
   struct Line { Pt orig, dest; }
 
   auto legsToLines(T)(T legs) {
     Pt here;
-    Line[] lines = Line(legs.length);
+    Line[] lines;
 
     foreach(leg; legs) {
       Pt there = here;
@@ -60,6 +60,14 @@ unittest {
     return lines;
   }
 
+  assert(legsToLines(parseWire("R8,U5,L5,D3,R9999")) == [
+    Line(Pt(0, 0), Pt(8, 0))
+  , Line(Pt(8, 0), Pt(8, -5))
+  , Line(Pt(8, -5), Pt(3, -5))
+  , Line(Pt(3, -5), Pt(3, -2))
+  , Line(Pt(3, -2), Pt(10002, -2))
+  ]);
+/*
   auto toLines(T)(T wires) {
     return wires
       .map!legsToLines;
