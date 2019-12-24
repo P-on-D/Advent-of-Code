@@ -8,7 +8,7 @@ My development environment is an [iMac](https://support.apple.com/kb/SP731) (Ret
 
 My runtime environment is [DMD 2.080.0](https://dlang.org/changelog/2.080.0.html) in a [Docker](https://docs.docker.com/docker-for-mac/) container lightly
 customised from the [canonical image](https://hub.docker.com/r/dlanguage/dmd/) - Dockerfile enclosed. The container gets
-2 CPUs and 4GM RAM.
+2 CPUs and 4GB RAM.
 
 My operating model is to build tests for the example input of part 1, commit
 when they pass, refactor into a program that passes the tests using example
