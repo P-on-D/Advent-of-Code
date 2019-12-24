@@ -1,14 +1,16 @@
 import std.algorithm;
 
 unittest {
+  enum Dir { Down = 'D', Left = 'L', Right = 'R', Up = 'U' }
+
   struct Leg {
-    char dir;
+    Dir dir;
     int dist;
   }
 
   Leg toLeg(T)(T spec) {
     import std.conv;
-    return Leg(spec[0], to!int(spec[1..$]));
+    return Leg(to!Dir(spec[0]), to!int(spec[1..$]));
   }
 
   auto parseWire(T)(T spec) {
