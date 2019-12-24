@@ -1,4 +1,4 @@
-import std.algorithm;
+import std.array, std.algorithm;
 
 unittest {
   enum Dir { Down = 'D', Left = 'L', Right = 'R', Up = 'U' }
@@ -19,9 +19,7 @@ unittest {
   assert(toLeg("D3") == Leg(Dir.Down, 3));
   assert(toLeg("R9999") == Leg(Dir.Right, 9999));
 
-  auto parseWire(T)(T spec) {
-    import std.array;
-
+  auto parseWire(string spec) {
     return spec
       .split(',')
       .map!toLeg
@@ -39,7 +37,7 @@ unittest {
   struct Pt { int x, y; }
   struct Line { Pt orig, dest; }
 
-  auto legsToLines(T)(T legs) {
+  auto wireToLines(Leg[] legs) {
     Pt here;
     Line[] lines;
 
@@ -60,19 +58,44 @@ unittest {
     return lines;
   }
 
-  assert(legsToLines(parseWire("R8,U5,L5,D3,R9999")) == [
+  assert(wireToLines(parseWire("R8,U5,L5,D3,R9999")) == [
     Line(Pt(0, 0), Pt(8, 0))
   , Line(Pt(8, 0), Pt(8, -5))
   , Line(Pt(8, -5), Pt(3, -5))
   , Line(Pt(3, -5), Pt(3, -2))
   , Line(Pt(3, -2), Pt(10002, -2))
   ]);
-/*
-  auto toLines(T)(T wires) {
-    return wires
-      .map!legsToLines;
-  }
 
+  auto lines = [
+    "R75,D30,R83,U83,L12,D49,R71,U7,L72"
+  , "U62,R66,U55,R34,D71,R55,D58,R83"
+  ].map!parseWire.array.map!wireToLines.array;
+
+  assert(lines == [
+    [
+      Line(Pt(0,0), Pt(75, 0))
+    , Line(Pt(75, 0), Pt(75,30))
+    , Line(Pt(75,30), Pt(75+83,30))
+    , Line(Pt(75+83,30), Pt(75+83,30-83))
+    , Line(Pt(75+83,30-83), Pt(75+83-12,30-83))
+    , Line(Pt(75+83-12,30-83), Pt(75+83-12,30-83+49))
+    , Line(Pt(75+83-12,30-83+49), Pt(75+83-12+71,30-83+49))
+    , Line(Pt(75+83-12+71,30-83+49), Pt(75+83-12+71,30-83+49-7))
+    , Line(Pt(75+83-12+71,30-83+49-7), Pt(75+83-12+71-72,30-83+49-7))
+    ]
+  , [
+      Line(Pt(0,0), Pt(0, -62))
+    , Line(Pt(0, -62), Pt(66, -62))
+    , Line(Pt(66, -62), Pt(66, -62-55))
+    , Line(Pt(66, -62-55), Pt(66+34, -62-55))
+    , Line(Pt(66+34, -62-55), Pt(66+34, -62-55+71))
+    , Line(Pt(66+34, -62-55+71), Pt(66+34+55, -62-55+71))
+    , Line(Pt(66+34+55, -62-55+71), Pt(66+34+55, -62-55+71+58))
+    , Line(Pt(66+34+55, -62-55+71+58), Pt(66+34+55+83, -62-55+71+58))
+    ]
+  ]
+);
+/*
   auto closestCrossover(T)(T input) {
     return input
       .map!parseWire
