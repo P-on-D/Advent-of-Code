@@ -21,6 +21,35 @@ unittest {
       .map!toLeg;
   }
 
+  struct Pt { int x, y; }
+  struct Line { Pt orig, dest; }
+
+  auto legsToLines(T)(T legs) {
+    Pt here;
+    Line[] lines = Line(legs.length);
+
+    foreach(leg; legs) {
+      Pt there = here;
+
+      final switch (leg.dir) {
+        case Dir.Down: there.y += leg.dist; break;
+        case Dir.Left: there.x -= leg.dist; break;
+        case Dir.Right: there.x += leg.dist; break;
+        case Dir.Up:    there.y -= leg.dist; break;
+      }
+
+      lines ~= Line(here, there);
+      here = there;
+    }
+
+    return lines;
+  }
+
+  auto toLines(T)(T wires) {
+    return wires
+      .map!legsToLines;
+  }
+
   auto closestCrossover(T)(T input) {
     return input
       .map!parseWire
