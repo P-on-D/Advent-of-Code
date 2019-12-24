@@ -29,6 +29,14 @@ bool execute(Instr instr) {
   }
 }
 
+bool trace(Instr instr) {
+  import std.stdio;
+  writef("%s %s=%s %s=%s", instr, instr.ld1, memory[instr.ld1], instr.ld2, memory[instr.ld2]);
+  auto x = execute(instr);
+  writefln(" %s=%s", instr.st, memory[instr.st]);
+  return x;
+}
+
 unittest {
   memory = [1,9,10,3,2,3,11,0,99,30,40,50];
 
@@ -95,7 +103,7 @@ void main() {
 
   do {
     PC = parse(PC, i);
-  } while(execute(i));
+  } while(trace(i));
 
   memory[0].writeln;
 }
