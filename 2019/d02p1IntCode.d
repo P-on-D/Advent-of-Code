@@ -95,8 +95,8 @@ void main() {
 
   memory = stdin.readln.split(',').map!(to!int).array;
 
-  memory[1] = 12;
-  memory[2] = 2;
+  memory[1] = 86;
+  memory[2] = 9;
 
   Addr PC;
   Instr i;
@@ -106,6 +106,8 @@ void main() {
   } while(trace(i));
 
   memory[0].writeln;
+
+  writeln(100 * 86 + 9);
 }
 
 }
