@@ -1,7 +1,25 @@
-unittest {
-  auto closestCrossover(T)(T input) {
-    import std.algorithm;
+import std.algorithm;
 
+unittest {
+  struct Leg {
+    char dir;
+    int dist;
+  }
+
+  Leg toLeg(T)(T spec) {
+    import std.conv;
+    return Leg(spec[0], to!int(spec[1..$]));
+  }
+
+  auto parseWire(T)(T spec) {
+    import std.array;
+
+    return spec
+      .split(',')
+      .map!toLeg;
+  }
+
+  auto closestCrossover(T)(T input) {
     return input
       .map!parseWire
       .map!toLines
