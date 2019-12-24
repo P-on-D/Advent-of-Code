@@ -87,6 +87,9 @@ void main() {
 
   memory = stdin.readln.split(',').map!(to!int).array;
 
+  memory[1] = 12;
+  memory[2] = 2;
+
   Addr PC;
   Instr i;
 
