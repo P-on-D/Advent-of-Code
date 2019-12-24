@@ -8,7 +8,7 @@ unittest {
     int dist;
   }
 
-  Leg toLeg(T)(T spec) {
+  Leg toLeg(string spec) {
     import std.conv;
     return Leg(to!Dir(spec[0]), to!int(spec[1..$]));
   }
@@ -19,15 +19,23 @@ unittest {
   assert(toLeg("D3") == Leg(Dir.Down, 3));
   assert(toLeg("R9999") == Leg(Dir.Right, 9999));
 
-/*
   auto parseWire(T)(T spec) {
     import std.array;
 
     return spec
       .split(',')
-      .map!toLeg;
+      .map!toLeg
+      .array;
   }
 
+  assert(parseWire("R8,U5,L5,D3,R9999") == [
+    Leg(Dir.Right, 8)
+  , Leg(Dir.Up, 5)
+  , Leg(Dir.Left, 5)
+  , Leg(Dir.Down, 3)
+  , Leg(Dir.Right, 9999)
+  ]);
+/*
   struct Pt { int x, y; }
   struct Line { Pt orig, dest; }
 
