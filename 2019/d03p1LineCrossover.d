@@ -1,4 +1,14 @@
 unittest {
+  auto closestCrossover(T)(T input) {
+    import std.algorithm;
+
+    return input
+      .map!parseWire
+      .map!toLines
+      .findCrossovers
+      .closest;
+  }
+
   assert(closestCrossover([
     "R8,U5,L5,D3"
   , "U7,R6,D4,L4"
