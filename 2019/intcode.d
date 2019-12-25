@@ -14,12 +14,16 @@ struct IntCode {
   Addr parse(Addr PC, out Instr instr) {
     import std.conv;
 
-    instr.op = to!Opcode(memory[PC]);
+    auto opcode = memory[PC];
+    bool p1imm = (opcode / 100) % 10 == 1;
+    bool p2imm = (opcode / 1000) % 10 == 1;
+
+    instr.op = to!Opcode(opcode % 100);
     final switch (instr.op) {
       case Opcode.Add:
       case Opcode.Mul:
-        instr.ld1 = memory[PC+1];
-        instr.ld2 = memory[PC+2];
+        instr.ld1 = p1imm ? memory[PC+1] : memory[memory[PC+1]];
+        instr.ld2 = p2imm ? memory[PC+2] : memory[memory[PC+2]];
         instr.st = memory[PC+3];
         return PC + 4;
       case Opcode.In:
@@ -34,12 +38,9 @@ struct IntCode {
   bool execute(Instr instr) {
     import std.range;
 
-    auto v1 = memory[instr.ld1];
-    auto v2 = memory[instr.ld2];
-
     final switch (instr.op) {
-      case Opcode.Add: memory[instr.st] = v1 + v2; return true;
-      case Opcode.Mul: memory[instr.st] = v1 * v2; return true;
+      case Opcode.Add: memory[instr.st] = instr.ld1 + instr.ld2; return true;
+      case Opcode.Mul: memory[instr.st] = instr.ld1 * instr.ld2; return true;
       case Opcode.In: memory[instr.st] = input.front; input.popFront; return true;
       case Opcode.Out: output ~= memory[instr.st]; return true;
       case Opcode.End: return false;
@@ -106,4 +107,12 @@ unittest {
 
   ic.memory = [3,0,4,0,99];
   assert(ic.run([1]) == [1]);
+
+  ic.memory = [1002,4,3,4,33];
+  ic.run();
+  assert(ic.memory == [1002,4,3,4,99]);
+
+  ic.memory = [1101,100,-1,4,0];
+  ic.run();
+  assert(ic.memory == [1101,100,-1,4,99]);
 }
