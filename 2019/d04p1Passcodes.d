@@ -49,14 +49,16 @@ unittest {
 } version (unittest) {} else {
 
 void main() {
-  int meets;
+  int meets, meetsNew;
 
   for(int i = 231832; i <= 767346; i++) {
     meets += meetsCriteria(i);
+    meetsNew += meetsNewCriteria(i);
   }
 
   import std.stdio;
   meets.writeln;
+  meetsNew.writeln;
 }
 
 }
