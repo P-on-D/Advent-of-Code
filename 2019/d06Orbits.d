@@ -3,18 +3,18 @@ struct Orbits {
   int[] orbits;
 
   this(string[] input) {
-    foreach(int index, string orbitSpec; input) {
+    foreach(string orbitSpec; input) {
       import std.array;
       string[] spec = orbitSpec.split(")");
       string obj = spec[0];
       string satt = spec[1];
 
       if (!(obj in indexes)) {
-        indexes[obj] = index;
-        orbits ~= index;
+        indexes[obj] = cast(int)orbits.length;
+        orbits ~= cast(int)orbits.length;
       }
 
-      indexes[satt] = index+1;
+      indexes[satt] = cast(int)orbits.length;
       orbits ~= indexes[obj];
     }
   }
