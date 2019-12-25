@@ -1,7 +1,49 @@
-unittest {
+struct Orbits {
   int[string] indexes;
   int[] orbits;
 
+  this(string[] input) {
+    foreach(int index, string orbitSpec; input) {
+      import std.array;
+      string[] spec = orbitSpec.split(")");
+      string obj = spec[0];
+      string satt = spec[1];
+
+      if (!(obj in indexes)) {
+        indexes[obj] = index;
+        orbits ~= index;
+      }
+
+      indexes[satt] = index+1;
+      orbits ~= indexes[obj];
+    }
+  }
+
+  int pathlen(int index) {
+    int len;
+    while(orbits[index] != index) {
+      ++len;
+      index = orbits[index];
+    }
+    return len;
+  }
+
+  int pathlen(string index) {
+    return pathlen(indexes[index]);
+  }
+
+  int total() {
+    int total;
+
+    for(int i = 0; i < orbits.length; i++) {
+      total += pathlen(i);
+    }
+
+    return total;
+  }
+}
+
+unittest {
   auto input = [
     "COM)B"
   , "B)C"
@@ -16,39 +58,20 @@ unittest {
   , "K)L"
   ];
 
-  foreach(int index, string orbitSpec; input) {
-    import std.array;
-    string[] spec = orbitSpec.split(")");
-    string obj = spec[0];
-    string satt = spec[1];
+  Orbits o = Orbits(input);
 
-    if (!(obj in indexes)) {
-      indexes[obj] = index;
-      orbits ~= index;
-    }
+  assert(o.pathlen("D") == 3);
+  assert(o.pathlen("L") == 7);
+  assert(o.pathlen("COM") == 0);
 
-    indexes[satt] = index+1;
-    orbits ~= indexes[obj];
-  }
+  assert(o.total == 42);
+} version (unittest) {} else {
 
-  int pathlen(int index) {
-    int len;
-    while(orbits[index] != index) {
-      ++len;
-      index = orbits[index];
-    }
-    return len;
-  }
+void main() {
+  import std.array, std.stdio;
 
-  assert(pathlen(indexes["D"]) == 3);
-  assert(pathlen(indexes["L"]) == 7);
-  assert(pathlen(indexes["COM"]) == 0);
+  Orbits o = Orbits(stdin.byLineCopy.array);
+  o.total.writeln;
+}
 
-  int total;
-
-  for(int i = 0; i < orbits.length; i++) {
-    total += pathlen(i);
-  }
-
-  assert(total == 42);
 }
