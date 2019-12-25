@@ -7,7 +7,7 @@ struct IntCode {
 
   alias Addr = int;
 
-  enum Opcode { Add = 1, Mul = 2, In = 3, Out = 4, End = 99 }
+  enum Opcode { Add = 1, Mul = 2, In = 3, Out = 4, Lt = 7, Eq = 8, End = 99 }
 
   struct Instr { Opcode op; Addr ld1, ld2, st; }
 
@@ -22,6 +22,8 @@ struct IntCode {
     final switch (instr.op) {
       case Opcode.Add:
       case Opcode.Mul:
+      case Opcode.Lt:
+      case Opcode.Eq:
         instr.ld1 = p1imm ? memory[PC+1] : memory[memory[PC+1]];
         instr.ld2 = p2imm ? memory[PC+2] : memory[memory[PC+2]];
         instr.st = memory[PC+3];
@@ -43,6 +45,8 @@ struct IntCode {
     final switch (instr.op) {
       case Opcode.Add: memory[instr.st] = instr.ld1 + instr.ld2; return true;
       case Opcode.Mul: memory[instr.st] = instr.ld1 * instr.ld2; return true;
+      case Opcode.Lt: memory[instr.st] = instr.ld1 < instr.ld2; return true;
+      case Opcode.Eq: memory[instr.st] = instr.ld1 == instr.ld2; return true;
       case Opcode.In: memory[instr.st] = input.front; input.popFront; return true;
       case Opcode.Out: output ~= instr.st; return true;
       case Opcode.End: return false;
