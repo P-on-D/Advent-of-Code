@@ -23,6 +23,19 @@ struct Orbits {
     }
   }
 
+  int[] path(int index) {
+    int[] route;
+    while(orbits[index] != index) {
+      index = orbits[index];
+      route ~= index;
+    }
+    return route;
+  }
+
+  int[] path(string index) {
+    return path(indexes[index]);
+  }
+
   int pathlen(int index) {
     int len;
     while(orbits[index] != index) {
@@ -69,6 +82,43 @@ unittest {
   assert(o.pathlen("COM") == 0);
 
   assert(o.total == 42);
+
+  assert(o.path("D") == [2, 1, 0]);
+
+  input = [
+    "COM)B"
+  , "B)C"
+  , "C)D"
+  , "D)E"
+  , "E)F"
+  , "B)G"
+  , "G)H"
+  , "D)I"
+  , "E)J"
+  , "J)K"
+  , "K)L"
+  , "K)YOU"
+  , "I)SAN"
+  ];
+
+  o = Orbits(input);
+
+  assert(o.path("SAN") == [8, 3, 2, 1, 0]);
+  assert(o.path("YOU") == [10, 9, 4, 3, 2, 1, 0]);
+
+  auto minTrans = ulong.max;
+
+  foreach(oi, ov; o.path("SAN")) {
+    if (oi > minTrans) break;
+    foreach(ii, iv; o.path("YOU")) {
+      if (oi+ii > minTrans) break;
+      if (iv == ov && (oi+ii) < minTrans) {
+        minTrans = oi + ii;
+      }
+    }
+  }
+
+  assert(minTrans == 4);
 } version (unittest) {} else {
 
 void main() {
