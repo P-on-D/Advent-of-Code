@@ -27,8 +27,10 @@ struct IntCode {
         instr.st = memory[PC+3];
         return PC + 4;
       case Opcode.In:
-      case Opcode.Out:
         instr.st = memory[PC+1];
+        return PC + 2;
+      case Opcode.Out:
+        instr.st = p1imm ? memory[PC+1] : memory[memory[PC+1]];
         return PC + 2;
       case Opcode.End:
         return PC;
@@ -42,7 +44,7 @@ struct IntCode {
       case Opcode.Add: memory[instr.st] = instr.ld1 + instr.ld2; return true;
       case Opcode.Mul: memory[instr.st] = instr.ld1 * instr.ld2; return true;
       case Opcode.In: memory[instr.st] = input.front; input.popFront; return true;
-      case Opcode.Out: output ~= memory[instr.st]; return true;
+      case Opcode.Out: output ~= instr.st; return true;
       case Opcode.End: return false;
     }
   }
@@ -115,4 +117,7 @@ unittest {
   ic.memory = [1101,100,-1,4,0];
   ic.run();
   assert(ic.memory == [1101,100,-1,4,99]);
+
+  ic.memory = [104,42,99];
+  assert(ic.run == [42]);
 }
