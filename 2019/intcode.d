@@ -2,10 +2,12 @@ module intcode;
 
 struct IntCode {
   int[] memory;
+  int[] input;
+  int[] output;
 
   alias Addr = int;
 
-  enum Opcode { Add = 1, Mul = 2, End = 99 }
+  enum Opcode { Add = 1, Mul = 2, In = 3, Out = 4, End = 99 }
 
   struct Instr { Opcode op; Addr ld1, ld2, st; }
 
@@ -13,21 +15,33 @@ struct IntCode {
     import std.conv;
 
     instr.op = to!Opcode(memory[PC]);
-    if (instr.op != Opcode.End) {
-      instr.ld1 = memory[PC+1];
-      instr.ld2 = memory[PC+2];
-      instr.st = memory[PC+3];
+    final switch (instr.op) {
+      case Opcode.Add:
+      case Opcode.Mul:
+        instr.ld1 = memory[PC+1];
+        instr.ld2 = memory[PC+2];
+        instr.st = memory[PC+3];
+        return PC + 4;
+      case Opcode.In:
+      case Opcode.Out:
+        instr.st = memory[PC+1];
+        return PC + 2;
+      case Opcode.End:
+        return PC;
     }
-    return PC + 4;
   }
 
   bool execute(Instr instr) {
+    import std.range;
+
     auto v1 = memory[instr.ld1];
     auto v2 = memory[instr.ld2];
 
     final switch (instr.op) {
       case Opcode.Add: memory[instr.st] = v1 + v2; return true;
       case Opcode.Mul: memory[instr.st] = v1 * v2; return true;
+      case Opcode.In: memory[instr.st] = input.front; input.popFront; return true;
+      case Opcode.Out: output ~= memory[instr.st]; return true;
       case Opcode.End: return false;
     }
   }
@@ -40,22 +54,32 @@ struct IntCode {
     return x;
   }
 
-  auto run() {
+  auto run(int[] input = []) {
+    this.input = input;
+    output = [];
+
     Addr PC;
     Instr i;
 
     do {
       PC = parse(PC, i);
     } while(execute(i));
+
+    return output;
   }
 
-  auto runWithTrace() {
+  auto runWithTrace(int[] input = []) {
+    this.input = input;
+    output = [];
+
     Addr PC;
     Instr i;
 
     do {
       PC = parse(PC, i);
     } while(trace(i));
+
+    return output;
   }
 }
 
@@ -79,4 +103,7 @@ unittest {
   ic.memory = [1,1,1,4,99,5,6,0,99];
   ic.run();
   assert(ic.memory == [30,1,1,4,2,5,6,0,99]);
+
+  ic.memory = [3,0,4,0,99];
+  assert(ic.run([1]) == [1]);
 }
