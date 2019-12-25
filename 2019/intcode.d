@@ -19,32 +19,36 @@ struct IntCode {
     bool p2imm = (opcode / 1000) % 10 == 1;
 
     int v(int n, bool imm) {
-      return imm ? memory[PC+n] : memory[memory[PC+n]];
+      return imm ? memory[n] : memory[memory[n]];
     }
 
     instr.op = to!Opcode(opcode % 100);
     final switch (instr.op) {
       case Opcode.JT:
-        return v(1, p1imm) != 0
-          ? v(2, p2imm)
+        instr.ld1 = v(PC+1, p1imm);
+        instr.ld2 = v(PC+2, p2imm);
+        return instr.ld1 != 0
+          ? instr.ld2
           : PC + 3;
       case Opcode.JF:
-        return v(1, p1imm) == 0
-          ? v(2, p2imm)
+        instr.ld1 = v(PC+1, p1imm);
+        instr.ld2 = v(PC+2, p2imm);
+        return instr.ld1 == 0
+          ? instr.ld2
           : PC + 3;
       case Opcode.Add:
       case Opcode.Mul:
       case Opcode.Lt:
       case Opcode.Eq:
-        instr.ld1 = v(1, p1imm);
-        instr.ld2 = v(2, p2imm);
+        instr.ld1 = v(PC+1, p1imm);
+        instr.ld2 = v(PC+2, p2imm);
         instr.st = memory[PC+3];
         return PC + 4;
       case Opcode.In:
         instr.st = memory[PC+1];
         return PC + 2;
       case Opcode.Out:
-        instr.st = v(1, p1imm);
+        instr.st = v(PC+1, p1imm);
         return PC + 2;
       case Opcode.End:
         return PC;
