@@ -133,6 +133,7 @@ void main() {
 
   Orbits o = Orbits(stdin.byLineCopy.array);
   o.total.writeln;
+  o.minimumTransfers("YOU", "SAN").writeln;
 }
 
 }
