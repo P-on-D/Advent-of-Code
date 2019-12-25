@@ -14,8 +14,12 @@ struct Orbits {
         orbits ~= cast(int)orbits.length;
       }
 
-      indexes[satt] = cast(int)orbits.length;
-      orbits ~= indexes[obj];
+      if (satt in indexes) {
+        orbits[indexes[satt]] = indexes[obj];
+      } else {
+        indexes[satt] = cast(int)orbits.length;
+        orbits ~= indexes[obj];
+      }
     }
   }
 
