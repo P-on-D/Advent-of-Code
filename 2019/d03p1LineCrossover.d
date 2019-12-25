@@ -34,7 +34,15 @@ unittest {
   , Leg(Dir.Right, 9999)
   ]);
 
-  struct Pt { int x, y; }
+  struct Pt {
+    int x, y;
+
+    int distance() {
+      import std.math;
+      return abs(x) + abs(y);
+    }
+  }
+
   struct Line {
     Pt orig, dest;
 
@@ -152,13 +160,29 @@ unittest {
   assert(linesCrossAt(Line(-1, -1, -1, 3), Line(-2, -2, 1, -2)) == Pt(0, 0));
   assert(linesCrossAt(Line(-2, -2, 1, -2), Line(-1, -1, -1, -3)) == Pt(-1, -2));
   assert(linesCrossAt(Line(-2, -2, 1, -2), Line(-1, -1, -1, 3)) == Pt(0, 0));
-/*
+
+  auto findCrossovers(Line[][] wires) {
+    Pt[] crossovers;
+
+    foreach(l1; wires[0]) {
+      foreach(l2; wires[1]) {
+        Pt crossover = linesCrossAt(l1, l2);
+        if (crossover != Pt.init) crossovers ~= crossover;
+      }
+    }
+
+    return crossovers;
+  }
+
   auto closestCrossover(T)(T input) {
-    return input
+    auto wires = input
       .map!parseWire
-      .map!toLines
-      .findCrossovers
-      .closest;
+      .map!wireToLines
+      .array;
+
+    return findCrossovers(wires)
+      .minElement!"a.distance"
+      .distance;
   }
 
   assert(closestCrossover([
@@ -173,4 +197,4 @@ unittest {
     "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51"
   , "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"
   ]) == 135);
-*/}
+}
