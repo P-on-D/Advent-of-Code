@@ -35,7 +35,18 @@ unittest {
   ]);
 
   struct Pt { int x, y; }
-  struct Line { Pt orig, dest; }
+  struct Line {
+    Pt orig, dest;
+
+    this(Pt o, Pt d) {
+      orig = o;
+      dest = d;
+    }
+
+    this(int ox, int oy, int dx, int dy) {
+      this(Pt(ox, oy), Pt(dx, dy));
+    }
+  }
 
   auto wireToLines(Leg[] legs) {
     Pt here;
@@ -93,8 +104,54 @@ unittest {
     , Line(Pt(66+34+55, -62-55+71), Pt(66+34+55, -62-55+71+58))
     , Line(Pt(66+34+55, -62-55+71+58), Pt(66+34+55+83, -62-55+71+58))
     ]
-  ]
-);
+  ]);
+
+  bool between(T)(T a, T x, T y) {
+    return x < y
+      ? x <= a && a <= y
+      : y <= a && a <= x;
+  }
+
+  assert(between(0, 0, 0));
+  assert(between(0, 1, -1));
+  assert(between(1, 1, -1));
+  assert(between(-1, 1, -1));
+  assert(between(0, -1, 1));
+  assert(between(1, -1, 1));
+  assert(between(-1, -1, 1));
+
+  // Since all wires cross at Pt(0, 0), that makes an unambiguous false.
+  // Pretty sure lines could entirely overlay but doubt the input is that evil :)
+  // So lines cross at their shared Pt(x, y)
+  Pt linesCrossAt(Line l1, Line l2) {
+    // parallel lines cannot cross
+    if(
+      (l1.orig.x == l1.dest.x && l2.orig.x == l2.dest.x)
+      ||
+      (l1.orig.y == l1.dest.y && l2.orig.y == l2.dest.y)
+    )
+      return Pt(0, 0);
+
+    // perpendicular lines cross
+    if (l1.orig.x != l1.dest.x) {
+      // l1 is horizontal, l2 verical
+      if (between(l1.orig.y, l2.orig.y, l2.dest.y) && between(l2.orig.x, l1.orig.x, l1.dest.x)) {
+        return Pt(l2.orig.x, l1.orig.y);
+      }
+    } else {
+      // l1 is vertical, l2 horizontal
+      if (between(l1.orig.x, l2.orig.x, l2.dest.x) && between(l2.orig.y, l1.orig.y, l1.dest.y)) {
+        return Pt(l1.orig.x, l2.orig.y);
+      }
+    }
+
+    return Pt(0, 0);
+  }
+
+  assert(linesCrossAt(Line(-1, -1, -1, -3), Line(-2, -2, 1, -2)) == Pt(-1, -2));
+  assert(linesCrossAt(Line(-1, -1, -1, 3), Line(-2, -2, 1, -2)) == Pt(0, 0));
+  assert(linesCrossAt(Line(-2, -2, 1, -2), Line(-1, -1, -1, -3)) == Pt(-1, -2));
+  assert(linesCrossAt(Line(-2, -2, 1, -2), Line(-1, -1, -1, 3)) == Pt(0, 0));
 /*
   auto closestCrossover(T)(T input) {
     return input
