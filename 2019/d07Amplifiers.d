@@ -9,6 +9,23 @@ auto thrusterSignal(int[] program, int[] phases) {
   return input;
 }
 
+auto maxThrusterSignal(int[] program) {
+  import std.algorithm, std.range, std.typecons;
+
+  int maxSignal;
+  int[] maxPhases;
+
+  foreach(phases; iota(0, 5).permutations) {
+    int signal = thrusterSignal(program, phases.array);
+    if (signal > maxSignal) {
+      maxSignal = signal;
+      maxPhases = phases.array;
+    }
+  }
+
+  return tuple(maxSignal, maxPhases);
+}
+
 unittest {
   import std.algorithm, std.range, std.typecons;
 
