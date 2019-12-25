@@ -252,6 +252,7 @@ void main() {
 
   auto input = stdin.byLineCopy.array[0..2];
   closestCrossover(input).writeln;
+  fewestSteps(input).writeln;
 }
 
 }
