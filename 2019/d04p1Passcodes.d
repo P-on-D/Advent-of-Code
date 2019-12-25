@@ -20,3 +20,14 @@ unittest {
   assert(!meetsCriteria(223450));
   assert(!meetsCriteria(123789));
 }
+
+void main() {
+  int meets;
+
+  for(int i = 231832; i <= 767346; i++) {
+    meets += meetsCriteria(i);
+  }
+
+  import std.stdio;
+  meets.writeln;
+}
