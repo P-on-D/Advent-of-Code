@@ -1,3 +1,14 @@
+auto thrusterSignal(int[] program, int[] phases) {
+  import intcode;
+  int input;
+
+  foreach(phase; phases) {
+    input = IntCode(program.dup).run([phase, input])[0];
+  }
+
+  return input;
+}
+
 unittest {
   import std.algorithm, std.range;
 
