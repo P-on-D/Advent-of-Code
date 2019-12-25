@@ -7,7 +7,7 @@ struct IntCode {
 
   alias Addr = int;
 
-  enum Opcode { Add = 1, Mul = 2, In = 3, Out = 4, Lt = 7, Eq = 8, End = 99 }
+  enum Opcode { Add = 1, Mul = 2, In = 3, Out = 4, JT = 5, JF = 6, Lt = 7, Eq = 8, End = 99 }
 
   struct Instr { Opcode op; Addr ld1, ld2, st; }
 
@@ -18,21 +18,33 @@ struct IntCode {
     bool p1imm = (opcode / 100) % 10 == 1;
     bool p2imm = (opcode / 1000) % 10 == 1;
 
+    int v(int n, bool imm) {
+      return imm ? memory[PC+n] : memory[memory[PC+n]];
+    }
+
     instr.op = to!Opcode(opcode % 100);
     final switch (instr.op) {
+      case Opcode.JT:
+        return v(1, p1imm) != 0
+          ? v(2, p2imm)
+          : PC + 3;
+      case Opcode.JF:
+        return v(1, p1imm) == 0
+          ? v(2, p2imm)
+          : PC + 3;
       case Opcode.Add:
       case Opcode.Mul:
       case Opcode.Lt:
       case Opcode.Eq:
-        instr.ld1 = p1imm ? memory[PC+1] : memory[memory[PC+1]];
-        instr.ld2 = p2imm ? memory[PC+2] : memory[memory[PC+2]];
+        instr.ld1 = v(1, p1imm);
+        instr.ld2 = v(2, p2imm);
         instr.st = memory[PC+3];
         return PC + 4;
       case Opcode.In:
         instr.st = memory[PC+1];
         return PC + 2;
       case Opcode.Out:
-        instr.st = p1imm ? memory[PC+1] : memory[memory[PC+1]];
+        instr.st = v(1, p1imm);
         return PC + 2;
       case Opcode.End:
         return PC;
@@ -48,6 +60,8 @@ struct IntCode {
       case Opcode.Lt: memory[instr.st] = instr.ld1 < instr.ld2; return true;
       case Opcode.Eq: memory[instr.st] = instr.ld1 == instr.ld2; return true;
       case Opcode.In: memory[instr.st] = input.front; input.popFront; return true;
+      case Opcode.JT: return true;
+      case Opcode.JF: return true;
       case Opcode.Out: output ~= instr.st; return true;
       case Opcode.End: return false;
     }
