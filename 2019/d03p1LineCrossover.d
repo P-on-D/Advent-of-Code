@@ -39,6 +39,11 @@ struct Line {
   this(int ox, int oy, int dx, int dy) {
     this(Pt(ox, oy), Pt(dx, dy));
   }
+
+  int distance() {
+    import std.math;
+    return abs(dest.x - orig.x) + abs(dest.y - orig.y);
+  }
 }
 
 auto wireToLines(Leg[] legs) {
@@ -95,14 +100,33 @@ Pt linesCrossAt(Line l1, Line l2) {
   return Pt(0, 0);
 }
 
+struct Crossover {
+  Pt pt;
+  int steps;
+}
+
 auto findCrossovers(Line[][] wires) {
-  Pt[] crossovers;
+  Crossover[] crossovers;
+  auto l1steps = 0;
 
   foreach(l1; wires[0]) {
+    auto steps = l1steps;
+
     foreach(l2; wires[1]) {
       Pt crossover = linesCrossAt(l1, l2);
-      if (crossover != Pt.init) crossovers ~= crossover;
+      if (crossover != Pt.init) {
+        import std.math;
+        crossovers ~= Crossover(crossover,
+          steps + abs(crossover.x - l1.orig.x)
+                + abs(crossover.x - l2.orig.x)
+                + abs(crossover.y - l1.orig.y)
+                + abs(crossover.y - l2.orig.y)
+        );
+      }
+      steps += l2.distance;
     }
+
+    l1steps += l1.distance;
   }
 
   return crossovers;
@@ -115,8 +139,19 @@ auto closestCrossover(T)(T input) {
     .array;
 
   return findCrossovers(wires)
-    .minElement!"a.distance"
-    .distance;
+    .minElement!"a.pt.distance"
+    .pt.distance;
+}
+
+auto fewestSteps(T)(T input) {
+  auto wires = input
+    .map!parseWire
+    .map!wireToLines
+    .array;
+
+  return findCrossovers(wires)
+    .minElement!"a.steps"
+    .steps;
 }
 
 unittest {
@@ -196,6 +231,20 @@ unittest {
     "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51"
   , "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"
   ]) == 135);
+
+  import std.stdio;
+  assert(fewestSteps([
+    "R8,U5,L5,D3"
+  , "U7,R6,D4,L4"
+  ]) == 30);
+  assert(fewestSteps([
+    "R75,D30,R83,U83,L12,D49,R71,U7,L72"
+  , "U62,R66,U55,R34,D71,R55,D58,R83"
+  ]) == 610);
+  assert(fewestSteps([
+    "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51"
+  , "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"
+  ]) == 410);
 } version (unittest) {} else {
 
 void main() {
