@@ -60,6 +60,24 @@ struct Orbits {
   }
 }
 
+int minimumTransfers(Orbits o, string from, string to) {
+  auto minTrans = int.max;
+  auto oPath = o.path(from);
+  auto iPath = o.path(to);
+
+  foreach(int oi, ov; oPath) {
+    if (oi > minTrans) break;
+    foreach(int ii, iv; iPath) {
+      if (oi+ii > minTrans) break;
+      if (iv == ov && (oi+ii) < minTrans) {
+        minTrans = oi + ii;
+      }
+    }
+  }
+
+  return minTrans == int.max ? 0 : minTrans;
+}
+
 unittest {
   auto input = [
     "COM)B"
@@ -106,19 +124,8 @@ unittest {
   assert(o.path("SAN") == [8, 3, 2, 1, 0]);
   assert(o.path("YOU") == [10, 9, 4, 3, 2, 1, 0]);
 
-  auto minTrans = ulong.max;
-
-  foreach(oi, ov; o.path("SAN")) {
-    if (oi > minTrans) break;
-    foreach(ii, iv; o.path("YOU")) {
-      if (oi+ii > minTrans) break;
-      if (iv == ov && (oi+ii) < minTrans) {
-        minTrans = oi + ii;
-      }
-    }
-  }
-
-  assert(minTrans == 4);
+  assert(o.minimumTransfers("YOU", "SAN") == 4);
+  assert(o.minimumTransfers("SAN", "YOU") == 4);
 } version (unittest) {} else {
 
 void main() {
