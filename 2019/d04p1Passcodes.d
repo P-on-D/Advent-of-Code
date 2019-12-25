@@ -1,6 +1,4 @@
-unittest {
-  int input = 111111;
-
+bool meetsCriteria(int input) {
   int i = input % 10;
   int n = input / 10;
   bool decreasing;
@@ -14,6 +12,11 @@ unittest {
     i = r;
   } while(n > 0);
 
-  assert(!decreasing);
-  assert(doubleadjacent);
+  return !decreasing && doubleadjacent;
+}
+
+unittest {
+  assert(meetsCriteria(111111));
+  assert(!meetsCriteria(223450));
+  assert(!meetsCriteria(123789));
 }
