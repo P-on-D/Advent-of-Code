@@ -8,7 +8,7 @@ struct IntCode {
   alias Addr = int;
 
   Addr PC;
-  bool halted;
+  bool halted = true;
   bool feedback = false;
 
   enum Opcode { Add = 1, Mul = 2, In = 3, Out = 4, JT = 5, JF = 6, Lt = 7, Eq = 8, End = 99 }
@@ -34,9 +34,10 @@ struct IntCode {
     }
 
     instr.op = to!Opcode(opcode % 100);
+
     final switch (instr.op) {
-      case Opcode.JT:  ld(); PC = instr.ld1 != 0 ? instr.ld2: PC + 3; return true;
-      case Opcode.JF:  ld(); PC = instr.ld1 == 0 ? instr.ld2 : PC + 3; return true;
+      case Opcode.JT:  ld(); PC = (instr.ld1 != 0) ? instr.ld2 : (PC + 3); return true;
+      case Opcode.JF:  ld(); PC = (instr.ld1 == 0) ? instr.ld2 : (PC + 3); return true;
       case Opcode.Add: ld(); memory[memory[PC+3]] = instr.ld1 + instr.ld2; PC = PC + 4; return true;
       case Opcode.Mul: ld(); memory[memory[PC+3]] = instr.ld1 * instr.ld2; PC = PC + 4; return true;
       case Opcode.Lt:  ld(); memory[memory[PC+3]] = instr.ld1 < instr.ld2; PC = PC + 4; return true;
