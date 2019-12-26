@@ -19,4 +19,22 @@ void main() {
   }
 
   leastFunc.writeln;
+
+  ubyte[] frame = new ubyte[width*height];
+  frame[] = 50;
+
+  foreach(layer; grid.chunks(stride)) {
+    bool transparent = false;
+    foreach(index, pixel; frame) {
+      if (pixel == 50) {
+        frame[index] = layer[index];
+        transparent = true;
+      }
+    }
+    if (!transparent) break;
+  }
+
+  foreach(line; frame.chunks(width)) {
+    line.map!(c => c == 49 ? '0' : ' ').writeln;
+  }
 }
