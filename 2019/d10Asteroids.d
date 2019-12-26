@@ -1,10 +1,31 @@
+auto seenFrom(string[] input, int x, int y) {
+  bool isAsteroid(int x, int y) {
+    return input[x][y] == '#'; // ?
+  }
+
+  int lookWith(int dx, int dy) {
+    int cx = x+dx, cy = y+dy;
+
+    while(cx >= 0 && cy >= 0 && cy < input.length && cx < input[cy].length) {
+      if(isAsteroid(cx, cy)) return 1;
+      cx += dx;
+      cy += dy;
+    }
+
+    return 0;
+  }
+
+  return lookWith(1,0) + lookWith(-1,0)
+       + lookWith(0,1) + lookWith(0,-1);
+}
+
 auto visibility(string[] input) {
   int[][] vis;
 
-  foreach(line; input) {
+  foreach(int row, line; input) {
     int[] cellvis;
-    foreach(cell; line) {
-      cellvis ~= cell == '.' ? 0 : 7;
+    foreach(int col, cell; line) {
+      cellvis ~= cell == '.' ? 0 : seenFrom(input, row, col);
     }
     vis ~= cellvis;
   }
