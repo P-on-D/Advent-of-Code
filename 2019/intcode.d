@@ -1,11 +1,16 @@
 module intcode;
 
-struct IntCode {
-  int[] memory;
-  int[] input;
-  int[] output;
+alias IntCode = IntCodeT!int;
+alias LongCode = IntCodeT!long;
 
-  alias Addr = int;
+struct IntCodeT(T) {
+  alias Word = T;
+
+  Word[] memory;
+  Word[] input;
+  Word[] output;
+
+  alias Addr = Word;
 
   Addr PC, RB;
   bool halted = true;
@@ -30,7 +35,7 @@ struct IntCode {
     Mode m2 = to!Mode((opcode / 1000) % 10);
     Mode m3 = to!Mode((opcode / 10000) % 10);
 
-    int ld(int n, Mode mode) {
+    Word ld(Addr n, Mode mode) {
       auto param = memory[PC+n];
 
       final switch (mode) {
@@ -40,7 +45,7 @@ struct IntCode {
       }
     }
 
-    void st(int n, Mode mode, int v) {
+    void st(Addr n, Mode mode, Word v) {
       auto param = memory[PC+n];
 
       final switch (mode) {
@@ -67,7 +72,7 @@ struct IntCode {
     }
   }
 
-  auto run(int[] input = []) {
+  auto run(Word[] input = []) {
     this.input = input;
     output = [];
     PC = 0;
@@ -79,7 +84,7 @@ struct IntCode {
     return output;
   }
 
-  auto cont(int[] input = []) {
+  auto cont(Word[] input = []) {
     this.input = input;
     if (halted) return output;
     if (feedback) output = [];
@@ -89,7 +94,7 @@ struct IntCode {
     return output;
   }
 
-  auto runInFeedback(int[] input = []) {
+  auto runInFeedback(Word[] input = []) {
     feedback = true;
     return run(input);
   }
@@ -186,6 +191,6 @@ unittest {
   ic = IntCode(quine.dup);
   assert(ic.run() == quine);
 
-  // assert(IntCode([1102,34915192,34915192,7,4,7,99,0]).run()[0] / 1000_0000_0000_0000 > 0);
-  // assert(IntCode([104,1125899906842624,99]).run() == [1125899906842624]);
+  assert(LongCode([1102,34915192,34915192,7,4,7,99,0]).run()[0] / 1000_0000_0000_0000 > 0);
+  assert(LongCode([104,1125899906842624,99]).run() == [1125899906842624]);
 }
