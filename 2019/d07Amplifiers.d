@@ -46,7 +46,7 @@ auto thrusterSignalWithFeedback(int[] program, int[] phases) {
   do {
     halted = true;
 
-    foreach(amp; amps) {
+    foreach(ref amp; amps) {
       feedback = amp.cont(feedback);
       amp.cont();
       halted = halted && amp.halted;
@@ -125,6 +125,7 @@ void main() {
 
   auto input = stdin.readln.split(',').map!(to!int).array;
   input.maxThrusterSignal.writeln;
+  input.maxThrusterSignalWithFeedback.writeln;
 }
 
 }
