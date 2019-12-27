@@ -1,39 +1,57 @@
-auto seenFrom(string[] input, int x, int y) {
-  bool isAsteroid(int x, int y) {
-    return input[x][y] == '#'; // ?
+struct Pt { int x, y; }
+
+struct NMV {
+  import std.math, std.numeric;
+
+  Pt p;
+  int xdist, ydist, scale, xdir, ydir, dist;
+
+  this(Pt u, Pt v) {
+    p = v;
+    if (u == v) return;
+
+    xdir = sgn(v.x - u.x);
+    xdist = abs(v.x - u.x);
+
+    ydir = sgn(v.y - u.y);
+    ydist = abs(v.y - u.y);
+
+    scale = gcd(xdist, ydist);
+
+    dist = xdist + ydist;
+
+    xdist /= scale;
+    ydist /= scale;
   }
+}
 
-  int lookWith(int dx, int dy) {
-    int cx = x+dx, cy = y+dy;
+auto seenFrom(Pt pt, Pt[] asteroids) {
+  import std.algorithm, std.array;
 
-    while(cx >= 0 && cy >= 0 && cy < input.length && cx < input[cy].length) {
-      if(isAsteroid(cx, cy)) return 1;
-      cx += dx;
-      cy += dy;
-    }
+  auto distance = asteroids
+    .map!(a => NMV(pt, a))
+    .array
+    .multiSort!("a.xdist < b.xdist", "a.ydist < b.ydist", "a.xdir < b.xdir", "a.ydir < b.ydir", "a.scale < b.scale")
+    .uniq!("a.xdist == b.xdist && a.ydist == b.ydist && a.xdir == b.xdir && a.ydir == b.ydir")
+    .count - 1
+  ;
 
-    return 0;
-  }
-
-  return lookWith(1,0) + lookWith(-1,0)
-       + lookWith(0,1) + lookWith(0,-1)
-       + lookWith(1,1) + lookWith(-1,-1)
-       + lookWith(-1,1) + lookWith(1,-1)
-       + lookWith(2,1) + lookWith(-2,1) + lookWith(1,2) + lookWith(1,-2)
-       + lookWith(2,-1) + lookWith(-2,-1) + lookWith(-1,-2) + lookWith(-1, 2)
-       + lookWith(3,1) + lookWith(-3,1) + lookWith(1,3) + lookWith(1,-3)
-       + lookWith(3,-1) + lookWith(-3,-1) + lookWith(-1,-3) + lookWith(-1, 3);
+  return cast(int)distance;
 }
 
 auto visibility(string[] input) {
+  Pt[] asteroids;
   int[][] vis;
 
   foreach(int row, line; input) {
-    int[] cellvis;
     foreach(int col, cell; line) {
-      cellvis ~= cell == '.' ? 0 : seenFrom(input, row, col);
+      if (cell == '#') asteroids ~= Pt(col, row);
     }
-    vis ~= cellvis;
+    vis ~= new int[line.length];
+  }
+
+  foreach(pt; asteroids) {
+    vis[pt.y][pt.x] = seenFrom(pt, asteroids);
   }
 
   return vis;
