@@ -16,7 +16,13 @@ auto seenFrom(string[] input, int x, int y) {
   }
 
   return lookWith(1,0) + lookWith(-1,0)
-       + lookWith(0,1) + lookWith(0,-1);
+       + lookWith(0,1) + lookWith(0,-1)
+       + lookWith(1,1) + lookWith(-1,-1)
+       + lookWith(-1,1) + lookWith(1,-1)
+       + lookWith(2,1) + lookWith(-2,1) + lookWith(1,2) + lookWith(1,-2)
+       + lookWith(2,-1) + lookWith(-2,-1) + lookWith(-1,-2) + lookWith(-1, 2)
+       + lookWith(3,1) + lookWith(-3,1) + lookWith(1,3) + lookWith(1,-3)
+       + lookWith(3,-1) + lookWith(-3,-1) + lookWith(-1,-3) + lookWith(-1, 3);
 }
 
 auto visibility(string[] input) {
