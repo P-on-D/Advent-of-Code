@@ -1,6 +1,6 @@
 import std.array, std.algorithm, std.typecons;
 
-struct Pt { int x, y; }
+struct Pt { int x, y; int opCmp(ref const Pt s) const { return x == s.x ? y - s.y : x - s.x; } }
 
 struct NMV {
   import std.math, std.numeric;
@@ -81,13 +81,50 @@ auto bestVisibility(Pt[] asteroids) {
 auto vapourisationOrder(Pt[] asteroids, Pt base) {
   import std.math;
 
-  auto candidates = asteroids.visibleFrom(base)
-    .filter!(a => a.p.x >= base.x && a.p.y < base.y)
-    .map!(a => tuple(a.p, atan(cast(float)(a.p.x - base.x) / (a.p.y - base.y))))
-    .array
-    .sort!"a[1] > b[1]";
+  Pt[] remaining = asteroids.sort.array;
+  Pt[] candidates;
 
-  return candidates.map!"a[0]".array;
+  do {
+    auto visible = remaining.visibleFrom(base);
+
+    candidates ~= visible
+      .filter!(a => a.p.x >= base.x && a.p.y < base.y)
+      .map!(a => tuple(a.p, atan(cast(float)(a.p.x - base.x) / (a.p.y - base.y))))
+      .array
+      .sort!"a[1] > b[1]"
+      .map!"a[0]"
+      .array;
+
+    candidates ~= visible
+      .filter!(a => a.p.x > base.x && a.p.y >= base.y)
+      .map!(a => tuple(a.p, atan(cast(float)(a.p.y - base.y) / (a.p.x - base.x))))
+      .array
+      .sort!"a[1] < b[1]"
+      .map!"a[0]"
+      .array;
+
+    candidates ~= visible
+      .filter!(a => a.p.x <= base.x && a.p.y > base.y)
+      .map!(a => tuple(a.p, atan(cast(float)(a.p.x - base.x) / (a.p.y - base.y))))
+      .array
+      .sort!"a[1] > b[1]"
+      .map!"a[0]"
+      .array;
+
+    candidates ~= visible
+      .filter!(a => a.p.x < base.x && a.p.y <= base.y)
+      .map!(a => tuple(a.p, atan(cast(float)(a.p.y - base.y) / (base.x - a.p.x))))
+      .array
+      .sort!"a[1] > b[1]"
+      .map!"a[0]"
+      .array;
+
+    if (candidates.length < asteroids.length) {
+      remaining = remaining.setDifference(candidates.dup.sort).array;
+    }
+  } while(candidates.length < asteroids.length);
+
+  return candidates;
 }
 
 unittest {
@@ -205,21 +242,21 @@ unittest {
   test(
     vapourisationOrder(astsToVape, Pt(8, 3))[9..18]
   , [
-      Pt(12,2), Pt(13,2), Pt(14,2), Pt(15,2), Pt(11,3), Pt(15,4), Pt(14,4), Pt(10,4), Pt(4,4)
+      Pt(12,2), Pt(13,2), Pt(14,2), Pt(15,2), Pt(12,3), Pt(16,4), Pt(15,4), Pt(10,4), Pt(4,4)
     ]
   );
 
   test(
     vapourisationOrder(astsToVape, Pt(8, 3))[18..27]
   , [
-      Pt(3,4), Pt(3,3), Pt(0,2), Pt(1,2), Pt(0,1), Pt(1,1), Pt(5,2), Pt(1,0), Pt(5,1)
+      Pt(2,4), Pt(2,3), Pt(0,2), Pt(1,2), Pt(0,1), Pt(1,1), Pt(5,2), Pt(1,0), Pt(5,1)
     ]
   );
 
   test(
     vapourisationOrder(astsToVape, Pt(8, 3))[27..$]
   , [
-      Pt(6,1), Pt(6,0), Pt(7,0), Pt(8,0), Pt(10,1), Pt(13, 0), Pt(15,1), Pt(13,3), Pt(14,3)
+      Pt(6,1), Pt(6,0), Pt(7,0), Pt(8,0), Pt(10,1), Pt(14,0), Pt(16,1), Pt(13,3), Pt(14,3)
     ]
   );
 } version (unittest) {} else {
