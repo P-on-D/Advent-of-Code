@@ -81,7 +81,7 @@ auto bestVisibility(Pt[] asteroids) {
 auto vapourisationOrder(Pt[] asteroids, Pt base) {
   import std.math;
 
-  Pt[] remaining = asteroids.sort.array;
+  Pt[] remaining = asteroids.filter!(a => a != base).array.sort.array;
   Pt[] candidates;
 
   do {
@@ -122,7 +122,7 @@ auto vapourisationOrder(Pt[] asteroids, Pt base) {
     if (candidates.length < asteroids.length) {
       remaining = remaining.setDifference(candidates.dup.sort).array;
     }
-  } while(candidates.length < asteroids.length);
+  } while(remaining.length);
 
   return candidates;
 }
@@ -198,29 +198,31 @@ unittest {
     tuple(Pt(6, 3), 41)
   );
 
+  auto largeExample = toAsteroids([
+    ".#..##.###...#######"
+  , "##.############..##."
+  , ".#.######.########.#"
+  , ".###.#######.####.#."
+  , "#####.##.#.##.###.##"
+  , "..#####..#.#########"
+  , "####################"
+  , "#.####....###.#.#.##"
+  , "##.#################"
+  , "#####.##.###..####.."
+  , "..######..##.#######"
+  , "####.##.####...##..#"
+  , ".#####..#.######.###"
+  , "##...#.##########..."
+  , "#.##########.#######"
+  , ".####.#.###.###.#.##"
+  , "....##.##.###..#####"
+  , ".#.#.###########.###"
+  , "#.#.#.#####.####.###"
+  , "###.##.####.##.#..##"
+  ]);
+
   test(
-    bestVisibility(toAsteroids([
-      ".#..##.###...#######"
-    , "##.############..##."
-    , ".#.######.########.#"
-    , ".###.#######.####.#."
-    , "#####.##.#.##.###.##"
-    , "..#####..#.#########"
-    , "####################"
-    , "#.####....###.#.#.##"
-    , "##.#################"
-    , "#####.##.###..####.."
-    , "..######..##.#######"
-    , "####.##.####...##..#"
-    , ".#####..#.######.###"
-    , "##...#.##########..."
-    , "#.##########.#######"
-    , ".####.#.###.###.#.##"
-    , "....##.##.###..#####"
-    , ".#.#.###########.###"
-    , "#.#.#.#####.####.###"
-    , "###.##.####.##.#..##"
-    ])),
+    bestVisibility(largeExample.dup),
     tuple(Pt(11, 13), 210)
   );
 
@@ -228,7 +230,7 @@ unittest {
     ".#....#####...#.."
   , "##...##.#####..##"
   , "##...#...#.#####."
-  , "..#.....X...###.."
+  , "..#.....#...###.."
   , "..#.#.....#....##"
   ]);
 
@@ -259,6 +261,19 @@ unittest {
       Pt(6,1), Pt(6,0), Pt(7,0), Pt(8,0), Pt(10,1), Pt(14,0), Pt(16,1), Pt(13,3), Pt(14,3)
     ]
   );
+
+  auto largeVape = vapourisationOrder(largeExample, Pt(11,13));
+  assert(largeVape[0] == Pt(11,12));
+  assert(largeVape[1] == Pt(12,1));
+  assert(largeVape[2] == Pt(12,2));
+  assert(largeVape[9] == Pt(12,8));
+  assert(largeVape[19] == Pt(16,0));
+  assert(largeVape[49] == Pt(16,9));
+  assert(largeVape[99] == Pt(10,16));
+  assert(largeVape[198] == Pt(9,6));
+  assert(largeVape[199] == Pt(8,2));
+  assert(largeVape[200] == Pt(10,9));
+  assert(largeVape[$-1..$] == [Pt(11,1)]);
 } version (unittest) {} else {
 
 void main() {
