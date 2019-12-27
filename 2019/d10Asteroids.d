@@ -1,4 +1,4 @@
-import std.typecons;
+import std.algorithm, std.typecons;
 
 struct Pt { int x, y; }
 
@@ -28,7 +28,7 @@ struct NMV {
 }
 
 auto seenFrom(Pt pt, Pt[] asteroids) {
-  import std.algorithm, std.array;
+  import std.array;
 
   auto distance = asteroids
     .map!(a => NMV(pt, a))
@@ -60,7 +60,20 @@ auto visibility(string[] input) {
 }
 
 auto bestVisibility(string [] input) {
-  return tuple(Pt(0, 0), 0);
+  Pt[] asteroids;
+
+  foreach(int row, line; input) {
+    foreach(int col, cell; line) {
+      if (cell == '#') asteroids ~= Pt(col, row);
+    }
+  }
+
+  Tuple!(Pt, int)[] vis;
+  foreach(pt; asteroids) {
+    vis ~= tuple(pt, seenFrom(pt, asteroids));
+  }
+
+  return vis.maxElement!"a[1]";
 }
 
 unittest {
@@ -99,7 +112,7 @@ unittest {
     , "##...#..#."
     , ".#....####"
     ]),
-    tuple(Pt(5, 6), 33)
+    tuple(Pt(5, 8), 33)
   );
 
   test(
