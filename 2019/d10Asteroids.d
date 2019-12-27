@@ -279,7 +279,13 @@ unittest {
 void main() {
   import std.array, std.stdio;
 
-  stdin.byLineCopy.array.toAsteroids.bestVisibility.writeln;
+  auto asteroids = stdin.byLineCopy.array.toAsteroids;
+
+  auto base = asteroids.dup.bestVisibility;
+  base.writeln;
+
+  auto bettingAsteroid = asteroids.dup.vapourisationOrder(base[0])[199];
+  writeln(bettingAsteroid.x * 100 + bettingAsteroid.y);
 }
 
 }
