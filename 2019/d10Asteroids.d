@@ -174,4 +174,12 @@ unittest {
     tuple(Pt(11, 13), 210)
   );
 
+} version (unittest) {} else {
+
+void main() {
+  import std.array, std.stdio;
+
+  stdin.byLineCopy.array.bestVisibility.writeln;
+}
+
 }
