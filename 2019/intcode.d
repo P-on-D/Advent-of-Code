@@ -7,12 +7,16 @@ struct IntCode {
 
   alias Addr = int;
 
+  Addr PC;
+  bool halted = true;
+  bool feedback = false;
+
   enum Opcode { Add = 1, Mul = 2, In = 3, Out = 4, JT = 5, JF = 6, Lt = 7, Eq = 8, End = 99 }
 
   struct Instr { Opcode op; Addr ld1, ld2, st; }
 
-  Addr parse(Addr PC, out Instr instr) {
-    import std.conv;
+  bool execute() {
+    import std.conv, std.range;
 
     auto opcode = memory[PC];
     bool p1imm = (opcode / 100) % 10 == 1;
@@ -22,89 +26,53 @@ struct IntCode {
       return imm ? memory[n] : memory[memory[n]];
     }
 
+    Instr instr;
+
+    void ld() {
+      instr.ld1 = v(PC+1, p1imm);
+      instr.ld2 = v(PC+2, p2imm);
+    }
+
     instr.op = to!Opcode(opcode % 100);
-    final switch (instr.op) {
-      case Opcode.JT:
-        instr.ld1 = v(PC+1, p1imm);
-        instr.ld2 = v(PC+2, p2imm);
-        return instr.ld1 != 0
-          ? instr.ld2
-          : PC + 3;
-      case Opcode.JF:
-        instr.ld1 = v(PC+1, p1imm);
-        instr.ld2 = v(PC+2, p2imm);
-        return instr.ld1 == 0
-          ? instr.ld2
-          : PC + 3;
-      case Opcode.Add:
-      case Opcode.Mul:
-      case Opcode.Lt:
-      case Opcode.Eq:
-        instr.ld1 = v(PC+1, p1imm);
-        instr.ld2 = v(PC+2, p2imm);
-        instr.st = memory[PC+3];
-        return PC + 4;
-      case Opcode.In:
-        instr.st = memory[PC+1];
-        return PC + 2;
-      case Opcode.Out:
-        instr.st = v(PC+1, p1imm);
-        return PC + 2;
-      case Opcode.End:
-        return PC;
-    }
-  }
-
-  bool execute(Instr instr) {
-    import std.range;
 
     final switch (instr.op) {
-      case Opcode.Add: memory[instr.st] = instr.ld1 + instr.ld2; return true;
-      case Opcode.Mul: memory[instr.st] = instr.ld1 * instr.ld2; return true;
-      case Opcode.Lt: memory[instr.st] = instr.ld1 < instr.ld2; return true;
-      case Opcode.Eq: memory[instr.st] = instr.ld1 == instr.ld2; return true;
-      case Opcode.In: memory[instr.st] = input.front; input.popFront; return true;
-      case Opcode.JT: return true;
-      case Opcode.JF: return true;
-      case Opcode.Out: output ~= instr.st; return true;
-      case Opcode.End: return false;
+      case Opcode.JT:  ld(); PC = (instr.ld1 != 0) ? instr.ld2 : (PC + 3); return true;
+      case Opcode.JF:  ld(); PC = (instr.ld1 == 0) ? instr.ld2 : (PC + 3); return true;
+      case Opcode.Add: ld(); memory[memory[PC+3]] = instr.ld1 + instr.ld2; PC = PC + 4; return true;
+      case Opcode.Mul: ld(); memory[memory[PC+3]] = instr.ld1 * instr.ld2; PC = PC + 4; return true;
+      case Opcode.Lt:  ld(); memory[memory[PC+3]] = instr.ld1 < instr.ld2; PC = PC + 4; return true;
+      case Opcode.Eq:  ld(); memory[memory[PC+3]] = instr.ld1 == instr.ld2; PC = PC + 4; return true;
+      case Opcode.In:  if (input.empty) return false;
+                       memory[memory[PC+1]] = input.front; input.popFront; PC = PC + 2; return true;
+      case Opcode.Out: output ~= v(PC+1, p1imm); PC = PC + 2; return !feedback;
+      case Opcode.End: halted = true; return false;
     }
-  }
-
-  bool trace(Instr instr) {
-    import std.stdio;
-    writef("%s %s=%s %s=%s", instr, instr.ld1, memory[instr.ld1], instr.ld2, memory[instr.ld2]);
-    auto x = execute(instr);
-    writefln(" %s=%s", instr.st, memory[instr.st]);
-    return x;
   }
 
   auto run(int[] input = []) {
     this.input = input;
     output = [];
+    PC = 0;
+    halted = false;
 
-    Addr PC;
-    Instr i;
-
-    do {
-      PC = parse(PC, i);
-    } while(execute(i));
+    while(execute()) {}
 
     return output;
   }
 
-  auto runWithTrace(int[] input = []) {
+  auto cont(int[] input = []) {
     this.input = input;
-    output = [];
+    if (halted) return output;
+    if (feedback) output = [];
 
-    Addr PC;
-    Instr i;
-
-    do {
-      PC = parse(PC, i);
-    } while(trace(i));
+    while(execute()) {}
 
     return output;
+  }
+
+  auto runInFeedback(int[] input = []) {
+    feedback = true;
+    return run(input);
   }
 }
 
@@ -167,4 +135,31 @@ unittest {
   assert(IntCode(largerExample).run([6]) == [999]);
   assert(IntCode(largerExample).run([8]) == [1000]);
   assert(IntCode(largerExample).run([10]) == [1001]);
+
+  auto outputOnePlusInputFiveTimes = [
+    3, 16, 101, 1, 16, 16, 4, 16, 101, -1, 16+1, 16+1, 1005, 16+1, 0, 99, 0, 5
+  ];
+  ic = IntCode(outputOnePlusInputFiveTimes.dup);
+  assert(ic.run([1, 2, 3, 4, 5]) == [2, 3, 4, 5, 6]);
+
+  ic = IntCode(outputOnePlusInputFiveTimes.dup);
+  ic.run();
+  assert(!ic.halted);
+
+  assert(ic.cont([1]) == [2]);
+  assert(ic.cont([2]) == [2, 3]);
+  ic.output = [];
+  assert(ic.cont([3]) == [4]);
+  assert(ic.cont([4, 5]) == [4, 5, 6]);
+  assert(ic.halted);
+
+  ic = IntCode(outputOnePlusInputFiveTimes.dup);
+  auto feedback = ic.runInFeedback([1]);
+
+  do {
+    feedback = ic.cont(feedback);
+    ic.cont();
+  } while(!ic.halted);
+
+  assert(feedback == [6]);
 }
