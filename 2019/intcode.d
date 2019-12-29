@@ -1,58 +1,86 @@
 module intcode;
 
-struct IntCode {
-  int[] memory;
-  int[] input;
-  int[] output;
+alias IntCode = IntCodeT!int;
+alias LongCode = IntCodeT!long;
 
-  alias Addr = int;
+struct IntCodeT(T) {
+  alias Word = T;
 
-  Addr PC;
+  this(Word[] program) {
+    memory = program.dup;
+  }
+
+  Word[] memory;
+  Word[] input;
+  Word[] output;
+
+  alias Addr = Word;
+
+  Addr PC, RB;
   bool halted = true;
   bool feedback = false;
 
-  enum Opcode { Add = 1, Mul = 2, In = 3, Out = 4, JT = 5, JF = 6, Lt = 7, Eq = 8, End = 99 }
+  enum Opcode {
+    Add = 1, Mul
+  , In = 3, Out
+  , JT = 5, JF
+  , Lt = 7, Eq
+  , Rel = 9
+  , End = 99
+  }
 
-  struct Instr { Opcode op; Addr ld1, ld2, st; }
+  enum Mode { Pos, Imm, Rel }
 
   bool execute() {
     import std.conv, std.range;
 
     auto opcode = memory[PC];
-    bool p1imm = (opcode / 100) % 10 == 1;
-    bool p2imm = (opcode / 1000) % 10 == 1;
+    Mode m1 = to!Mode((opcode / 100) % 10);
+    Mode m2 = to!Mode((opcode / 1000) % 10);
+    Mode m3 = to!Mode((opcode / 10000) % 10);
 
-    int v(int n, bool imm) {
-      return imm ? memory[n] : memory[memory[n]];
+    Word ld(Addr n, Mode mode) {
+      auto param = memory[PC+n];
+
+      final switch (mode) {
+        case Mode.Pos: if (memory.length <= param) memory.length = param+1; return memory[param];
+        case Mode.Imm: return param;
+        case Mode.Rel: if (memory.length <= RB+param) memory.length = RB+param+1; return memory[RB+param];
+      }
     }
 
-    Instr instr;
+    void st(Addr n, Mode mode, Word v) {
+      auto param = memory[PC+n];
 
-    void ld() {
-      instr.ld1 = v(PC+1, p1imm);
-      instr.ld2 = v(PC+2, p2imm);
+      final switch (mode) {
+        case Mode.Pos: if (memory.length <= param) memory.length = param+1; memory[param] = v; return;
+        case Mode.Imm: return;
+        case Mode.Rel: if (memory.length <= RB+param) memory.length = RB+param+1; memory[RB+param] = v; return;
+      }
     }
 
-    instr.op = to!Opcode(opcode % 100);
+    Opcode op = to!Opcode(opcode % 100);
 
-    final switch (instr.op) {
-      case Opcode.JT:  ld(); PC = (instr.ld1 != 0) ? instr.ld2 : (PC + 3); return true;
-      case Opcode.JF:  ld(); PC = (instr.ld1 == 0) ? instr.ld2 : (PC + 3); return true;
-      case Opcode.Add: ld(); memory[memory[PC+3]] = instr.ld1 + instr.ld2; PC = PC + 4; return true;
-      case Opcode.Mul: ld(); memory[memory[PC+3]] = instr.ld1 * instr.ld2; PC = PC + 4; return true;
-      case Opcode.Lt:  ld(); memory[memory[PC+3]] = instr.ld1 < instr.ld2; PC = PC + 4; return true;
-      case Opcode.Eq:  ld(); memory[memory[PC+3]] = instr.ld1 == instr.ld2; PC = PC + 4; return true;
+    final switch (op) {
+      case Opcode.JT:  PC = (ld(1, m1) != 0) ? ld(2, m2) : (PC + 3); return true;
+      case Opcode.JF:  PC = (ld(1, m1) == 0) ? ld(2, m2) : (PC + 3); return true;
+      case Opcode.Add: st(3, m3, ld(1, m1) + ld(2, m2)); PC = PC + 4; return true;
+      case Opcode.Mul: st(3, m3, ld(1, m1) * ld(2, m2)); PC = PC + 4; return true;
+      case Opcode.Lt:  st(3, m3, ld(1, m1) < ld(2, m2)); PC = PC + 4; return true;
+      case Opcode.Eq:  st(3, m3, ld(1, m1) == ld(2, m2)); PC = PC + 4; return true;
       case Opcode.In:  if (input.empty) return false;
-                       memory[memory[PC+1]] = input.front; input.popFront; PC = PC + 2; return true;
-      case Opcode.Out: output ~= v(PC+1, p1imm); PC = PC + 2; return !feedback;
+                       st(1, m1, input.front); input.popFront; PC = PC + 2; return true;
+      case Opcode.Out: output ~= ld(1, m1); PC = PC + 2; return !feedback;
+      case Opcode.Rel: RB += ld(1, m1); PC = PC + 2; return true;
       case Opcode.End: halted = true; return false;
     }
   }
 
-  auto run(int[] input = []) {
+  auto run(Word[] input = []) {
     this.input = input;
     output = [];
     PC = 0;
+    RB = 0;
     halted = false;
 
     while(execute()) {}
@@ -60,7 +88,7 @@ struct IntCode {
     return output;
   }
 
-  auto cont(int[] input = []) {
+  auto cont(Word[] input = []) {
     this.input = input;
     if (halted) return output;
     if (feedback) output = [];
@@ -70,7 +98,7 @@ struct IntCode {
     return output;
   }
 
-  auto runInFeedback(int[] input = []) {
+  auto runInFeedback(Word[] input = []) {
     feedback = true;
     return run(input);
   }
@@ -162,4 +190,11 @@ unittest {
   } while(!ic.halted);
 
   assert(feedback == [6]);
+
+  auto quine = [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99];
+  ic = IntCode(quine.dup);
+  assert(ic.run() == quine);
+
+  assert(LongCode([1102,34915192,34915192,7,4,7,99,0]).run()[0] / 1000_0000_0000_0000 > 0);
+  assert(LongCode([104,1125899906842624,99]).run() == [1125899906842624]);
 }
