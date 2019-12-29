@@ -6,6 +6,10 @@ alias LongCode = IntCodeT!long;
 struct IntCodeT(T) {
   alias Word = T;
 
+  this(Word[] program) {
+    memory = program.dup;
+  }
+
   Word[] memory;
   Word[] input;
   Word[] output;
