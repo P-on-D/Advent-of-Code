@@ -102,4 +102,15 @@ unittest{
   foreach(i; 0..100) moons.simulateMotion;
 
   assert(moons.energy == 1940);
+} version (unittest) {} else {
+
+void main() {
+  import std.algorithm, std.array, std.stdio;
+
+  auto moons = stdin.byLineCopy.map!toMoon.array;
+
+  foreach(i; 0..1000) moons.simulateMotion;
+  moons.energy.writeln;
+}
+
 }
