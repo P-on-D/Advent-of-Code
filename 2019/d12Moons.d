@@ -33,6 +33,19 @@ auto simulateMotion(T)(T moons) {
   return moons;
 }
 
+auto energy(T)(T moons) {
+  ulong total = 0;
+
+  foreach(m; moons) {
+    import std.math;
+
+    total += (m.pos.x.abs + m.pos.y.abs + m.pos.z.abs)
+           * (m.vel.dx.abs + m.vel.dy.abs + m.vel.dz.abs);
+  }
+
+  return total;
+}
+
 unittest{
   import std.algorithm, std.array;
 
@@ -50,30 +63,43 @@ unittest{
   , Moon(Pt(3,5,-1))
   ]));
 
-  auto simulation = moons.simulateMotion;
+  moons.simulateMotion;
 
-  assert(simulation.equal([
+  assert(moons.equal([
     Moon(Pt(2,-1,1), Vec(3,-1,-1))
   , Moon(Pt(3,-7,-4), Vec(1,3,3))
   , Moon(Pt(1,-7,5), Vec(-3,1,-3))
   , Moon(Pt(2,2,0), Vec(-1,-3,1))
   ]));
 
-  simulation.simulateMotion;
+  moons.simulateMotion;
 
-  assert(simulation.equal([
+  assert(moons.equal([
     Moon(Pt( 5, -3, -1), Vec( 3, -2, -2))
   , Moon(Pt( 1, -2,  2), Vec(-2,  5,  6))
   , Moon(Pt( 1, -4, -1), Vec( 0,  3, -6))
   , Moon(Pt( 1, -4,  2), Vec(-1, -6,  2))
   ]));
 
-  foreach(i; 2..10) simulation.simulateMotion;
+  foreach(i; 2..10) moons.simulateMotion;
 
-  assert(simulation.equal([
+  assert(moons.equal([
     Moon(Pt( 2,  1, -3), Vec(-3, -2,  1))
   , Moon(Pt( 1, -8,  0), Vec(-1,  1,  3))
   , Moon(Pt( 3, -6,  1), Vec( 3,  2, -3))
   , Moon(Pt( 2,  0,  4), Vec( 1, -1, -1))
   ]));
+
+  assert(moons.energy == 179);
+
+  moons = [
+    "<x=-8, y=-10, z=0>"
+  , "<x=5, y=5, z=10>"
+  , "<x=2, y=-7, z=3>"
+  , "<x=9, y=-8, z=-3>"
+  ].map!toMoon.array;
+
+  foreach(i; 0..100) moons.simulateMotion;
+
+  assert(moons.energy == 1940);
 }
