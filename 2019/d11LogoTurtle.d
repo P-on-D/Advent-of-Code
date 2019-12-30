@@ -187,4 +187,17 @@ unittest {
   assert(turtle.halted);
 
   assert(exampleCode.loadTurtle.runTurtle.length == 6);
+} version (unittest) {} else {
+
+void main() {
+  import std.algorithm, std.array, std.conv, std.stdio;
+
+  stdin
+    .readln.split(',').map!(to!long).array
+    .loadTurtle
+    .runTurtle
+    .length
+    .writeln;
+}
+
 }
