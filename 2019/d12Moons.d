@@ -49,12 +49,14 @@ auto energy(T)(T moons) {
 unittest{
   import std.algorithm, std.array;
 
-  auto moons = [
+  auto example1Moons = [
     "<x=-1, y=0, z=2>"
   , "<x=2, y=-10, z=-7>"
   , "<x=4, y=-8, z=8>"
   , "<x=3, y=5, z=-1>"
   ].map!toMoon.array;
+
+  auto moons = example1Moons.dup;
 
   assert(moons.equal([
     Moon(Pt(-1,0,2))
@@ -92,16 +94,28 @@ unittest{
 
   assert(moons.energy == 179);
 
-  moons = [
+  auto example2Moons = [
     "<x=-8, y=-10, z=0>"
   , "<x=5, y=5, z=10>"
   , "<x=2, y=-7, z=3>"
   , "<x=9, y=-8, z=-3>"
   ].map!toMoon.array;
 
+  moons = example2Moons.dup;
+
   foreach(i; 0..100) moons.simulateMotion;
 
   assert(moons.energy == 1940);
+
+  moons = example1Moons.dup;
+
+  auto counter = 0;
+  do {
+    counter++;
+    moons.simulateMotion;
+  } while(!moons.equal(example1Moons));
+
+  assert(counter == 2772);
 } version (unittest) {} else {
 
 void main() {
@@ -111,6 +125,20 @@ void main() {
 
   foreach(i; 0..1000) moons.simulateMotion;
   moons.energy.writeln;
+
+  auto forever = moons.dup;
+
+  ulong counter = 0;
+  do {
+    if(counter++ % 10_000_000 == 0) {
+      ".".write;
+      stdout.flush;
+    }
+    forever.simulateMotion;
+  } while(!forever.equal(moons));
+
+  writeln;
+  counter.writeln;
 }
 
 }
