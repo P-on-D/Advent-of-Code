@@ -13,7 +13,7 @@ struct Turtle(T) {
 
   auto halted() { return brain.halted; }
 
-  auto turn(int input) {
+  auto turn(T.Word input) {
     dir = (dir + (input ? 1 : -1)) & 3;
     final switch (dir) {
       case 0: pos.y--; break;
@@ -24,7 +24,7 @@ struct Turtle(T) {
     return pos;
   }
 
-  auto step(int input) {
+  auto step(T.Word input) {
     auto output = brain.cont([input]);
     brain.output = [];
     return output;
@@ -35,6 +35,20 @@ auto loadTurtle(long[] opcodes) {
   import intcode;
 
   return Turtle!LongCode(LongCode(opcodes));
+}
+
+auto runTurtle(T)(T turtle) {
+  long[Pt] grid;
+
+  while(!turtle.halted) {
+    auto input = grid.get(turtle.pos, 0);
+    auto output = turtle.step(input);
+
+    grid[turtle.pos] = output[0];
+    turtle.turn(output[1]);
+  }
+
+  return grid;
 }
 
 auto assembler(string code) {
@@ -131,7 +145,7 @@ unittest {
   assert(turtle.turn(0) == Pt(1,-1));
   assert(turtle.turn(0) == Pt(0,-1));
 
-  turtle = loadTurtle(assembler("
+  auto exampleCode = assembler("
     In x
     JT x, #Error
     Out #1
@@ -160,8 +174,9 @@ unittest {
     End
   x:
     Var 0
-  "));
+  ");
 
+  turtle = loadTurtle(exampleCode);
   assert(turtle.step(0) == [1, 0]);
   assert(turtle.step(0) == [0, 0]);
   assert(turtle.step(0) == [1, 0]);
@@ -170,5 +185,6 @@ unittest {
   assert(turtle.step(0) == [1, 0]);
   assert(turtle.step(0) == [1, 0]);
   assert(turtle.halted);
-}
 
+  assert(exampleCode.loadTurtle.runTurtle.length == 6);
+}
