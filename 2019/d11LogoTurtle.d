@@ -1,3 +1,5 @@
+import std.algorithm;
+
 struct Pt { int x, y; }
 
 struct Turtle(T) {
@@ -12,6 +14,12 @@ struct Turtle(T) {
   }
 
   auto halted() { return brain.halted; }
+
+  auto reset() {
+    dir = 0;
+    pos = Pt(0,0);
+    brain.run;
+  }
 
   auto turn(T.Word input) {
     dir = (dir + (input ? 1 : -1)) & 3;
@@ -39,7 +47,10 @@ auto loadTurtle(long[] opcodes) {
 
 auto runTurtle(T)(T turtle) {
   long[Pt] grid;
+  return runTurtle(turtle, grid);
+}
 
+auto runTurtle(T)(T turtle, long[Pt] grid) {
   while(!turtle.halted) {
     auto input = grid.get(turtle.pos, 0);
     auto output = turtle.step(input);
@@ -56,7 +67,7 @@ auto assembler(string code) {
   long[string] labels;
 
   foreach(pass; 0 .. 2) {
-    import std.algorithm, std.array, std.conv, std.range, std.string;
+    import std.array, std.conv, std.range, std.string;
 
     auto lineno = 0;
     opcodes = [];
@@ -134,6 +145,31 @@ auto assembler(string code) {
   return opcodes;
 }
 
+auto plot(long[Pt] grid) {
+  char[][] output;
+
+  auto minY = grid.keys.minElement!"a.y".y
+     , minX = grid.keys.minElement!"a.x".x
+     , maxY = grid.keys.maxElement!"a.y".y
+     , maxX = grid.keys.maxElement!"a.x".x;
+
+  foreach(y; minY .. maxY + 1) {
+    char[] line;
+
+    foreach(x; minX .. maxX + 1) {
+      if (Pt(x, y) in grid) {
+        line ~= grid[Pt(x, y)] ? '#' : '.';
+      } else {
+        line ~= ' ';
+      }
+    }
+
+    output ~= line;
+  }
+
+  return output;
+}
+
 unittest {
   auto turtle = loadTurtle([3,3,99,0]);
   assert(!turtle.halted);
@@ -186,18 +222,34 @@ unittest {
   assert(turtle.step(0) == [1, 0]);
   assert(turtle.halted);
 
+  turtle.reset;
+  assert(turtle.step(0) == [1, 0]);
+
   assert(exampleCode.loadTurtle.runTurtle.length == 6);
+  assert(exampleCode.loadTurtle.runTurtle.plot == [
+    "  #"
+  , "..#"
+  , "## "
+  ]);
 } version (unittest) {} else {
 
 void main() {
   import std.algorithm, std.array, std.conv, std.stdio;
 
-  stdin
-    .readln.split(',').map!(to!long).array
-    .loadTurtle
-    .runTurtle
+  auto turtle = stdin.readln.split(',').map!(to!long).array
+    .loadTurtle;
+
+  long[Pt] grid;
+
+  turtle
+    .runTurtle(grid)
     .length
     .writeln;
+
+  turtle.reset;
+  grid = [Pt(0,0): 1];
+
+  turtle.runTurtle(grid).plot.each!writeln;
 }
 
 }
