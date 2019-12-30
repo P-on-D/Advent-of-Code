@@ -1,16 +1,44 @@
 import std.array, std.algorithm, std.typecons;
 
-struct Pt { int x, y; int opCmp(ref const Pt s) const { return x == s.x ? y - s.y : x - s.x; } }
+/**
+ * [Pt] represents an point in 2D space, with a specific ordering
+ */
+struct Pt {
+  int x, y;
 
+  /// [Pt]s with lower `x`s order first, then lower `y`s
+  int opCmp(ref const Pt s) const {
+    return x == s.x ? y - s.y : x - s.x;
+  }
+}
+
+/**
+ * [NMV] represents the Normalised Manhattan Vector between two [Pt]s
+ *
+ * This structure was inspired by the diagram on the puzzle showing which
+ * asteroids were responsible for occluding which others. From `Pt(0,0)`
+ * the asteroid at `Pt(3,3)` has `NVM(1,1,3,1,1,6)` and the asteroid at
+ * `Pt(4,4)` has `NMV(1,1,4,1,1,8)`. They are on the same Manhattan vector
+ * (`xdist`, `ydist`, `xdir` and `ydir` are equal) differing only by `scale`
+ * so the former occludes the latter and all others with the same vector.
+ */
 struct NMV {
   import std.math, std.numeric;
 
-  Pt p;
-  int xdist, ydist, scale, xdir, ydir, dist;
+  Pt p; /// I suspect this is here as a convenience
 
-  this(Pt u, Pt v) {
-    p = v;
-    if (u == v) return;
+  int
+    xdist, /// normalised difference between x co-ords
+    ydist, /// normalised difference between y co-ords
+    scale, /// i.e. xdist * scale = absolute difference between x co-ords
+    xdir,  /// direction of x (-1, 0, 1)
+    ydir,  /// direction of y (-1, 0, 1)
+    dist;  /// Manhattan distance
+
+  this(Pt u, Pt v)
+  {
+    p = v; /// yeah, this is odd
+    if (u == v) return; /// this is also odd
 
     xdir = sgn(v.x - u.x);
     xdist = abs(v.x - u.x);
@@ -18,28 +46,41 @@ struct NMV {
     ydir = sgn(v.y - u.y);
     ydist = abs(v.y - u.y);
 
+    // if both components divide by the same amount, the vector can be normalised
     scale = gcd(xdist, ydist);
 
     dist = xdist + ydist;
 
+    // if the vector cannot be normalised, scale = 1
     xdist /= scale;
     ydist /= scale;
   }
 }
 
+/**
+ * Convert the input (a grid of characters with '#' indicating an asteroid) into
+ * a list of asteroid co-ordinates.
+ */
 auto toAsteroids(string[] input) {
   Pt[] asteroids;
 
-  foreach(int row, line; input) {
-    foreach(int col, cell; line) {
-      if (cell == '#') asteroids ~= Pt(col, row);
+  foreach(int y, line; input) {
+    foreach(int x, cell; line) {
+      if (cell == '#') asteroids ~= Pt(x, y);
     }
   }
 
   return asteroids;
 }
 
-auto visibleFrom(Pt[] asteroids, Pt pt) {
+/**
+ * Determine the asteroids visible from a given point
+ *
+ * [pt] is considered to be in the asteroid field and will be the first result.
+ * Compute the NMV for each asteroid from [pt], group by NMV in scale order and
+ * return the first of each group.
+ */
+auto visibleFrom(R)(R asteroids, Pt pt) {
   return asteroids
     .map!(a => NMV(pt, a))
     .array
@@ -47,20 +88,15 @@ auto visibleFrom(Pt[] asteroids, Pt pt) {
     .uniq!("a.xdist == b.xdist && a.ydist == b.ydist && a.xdir == b.xdir && a.ydir == b.ydir");
 }
 
+/// Return the number of asteroids seen from [pt]
 auto seenFrom(Pt pt, Pt[] asteroids) {
   return cast(int)asteroids.visibleFrom(pt).count - 1;
 }
 
+/// Graph the number of asteroids seen from each point on the input grid
 auto visibility(string[] input) {
-  Pt[] asteroids;
-  int[][] vis;
-
-  foreach(int row, line; input) {
-    foreach(int col, cell; line) {
-      if (cell == '#') asteroids ~= Pt(col, row);
-    }
-    vis ~= new int[line.length];
-  }
+  auto asteroids = toAsteroids(input);
+  auto vis = input.map!(a => new int[](a.length)).array;
 
   foreach(pt; asteroids) {
     vis[pt.y][pt.x] = seenFrom(pt, asteroids);
@@ -69,58 +105,57 @@ auto visibility(string[] input) {
   return vis;
 }
 
+/// Answer puzzle part 1 by returning the asteroid that sees the most
 auto bestVisibility(Pt[] asteroids) {
-  Tuple!(Pt, int)[] vis;
-  foreach(pt; asteroids) {
-    vis ~= tuple(pt, seenFrom(pt, asteroids));
-  }
-
-  return vis.maxElement!"a[1]";
+  return asteroids
+    .map!(pt => tuple(pt, seenFrom(pt, asteroids)))
+    .maxElement!"a[1]";
 }
 
+/**
+ * Answer puzzle part 2 by simulating the rotation of the laser from up,
+ * through all the visible asteroids in each of 4 quadrants, sorted by
+ * their angle, removing them in that order, repeating until none remain.
+ */
 auto vapourisationOrder(Pt[] asteroids, Pt base) {
-  import std.math;
+  import std.math, std.range;
 
-  Pt[] remaining = asteroids.filter!(a => a != base).array.sort.array;
+  /// Compute the normalised angle between the base and a point, depending on if
+  /// the adjacent is on the X or Y
+  auto adjX = (NMV a) => atan(cast(float)(a.p.y - base.y) / (a.p.x - base.x));
+  auto adjY = (NMV a) => -atan(cast(float)(a.p.x - base.x) / (a.p.y - base.y));
+
+  /// The laser rotates through four quadrants
+  auto quadrants = [
+    (NMV v) => v.p.y < base.y && v.p.x >= base.x /// up and to the right
+  , v => v.p.x > base.x && v.p.y >= base.y       /// right and to down
+  , v => v.p.y > base.y && v.p.x <= base.x       /// down and to the left
+  , v => v.p.x < base.x && v.p.y <= base.y       /// left and to up
+  ]
+  .zip(
+    [adjY, adjX, adjY, adjX] /// Which angle function to apply to which quadrant
+  );
+
+  auto remaining = asteroids.sort.filter!(a => a != base).array;
   Pt[] candidates;
 
   do {
     auto visible = remaining.visibleFrom(base);
 
-    candidates ~= visible
-      .filter!(a => a.p.x >= base.x && a.p.y < base.y)
-      .map!(a => tuple(a.p, atan(cast(float)(a.p.x - base.x) / (a.p.y - base.y))))
-      .array
-      .sort!"a[1] > b[1]"
+    /// `fns[0]` is the quadrant filter, `fns[1]` is the angle
+    auto newCandidates = quadrants
+      .map!(fns =>
+        visible.filter!(v => fns[0](v))
+          .map!(v => tuple(v.p, fns[1](v)))
+          .array.sort!"a[1] < b[1]"
+      )
+      .join
       .map!"a[0]"
       .array;
-
-    candidates ~= visible
-      .filter!(a => a.p.x > base.x && a.p.y >= base.y)
-      .map!(a => tuple(a.p, atan(cast(float)(a.p.y - base.y) / (a.p.x - base.x))))
-      .array
-      .sort!"a[1] < b[1]"
-      .map!"a[0]"
-      .array;
-
-    candidates ~= visible
-      .filter!(a => a.p.x <= base.x && a.p.y > base.y)
-      .map!(a => tuple(a.p, atan(cast(float)(a.p.x - base.x) / (a.p.y - base.y))))
-      .array
-      .sort!"a[1] > b[1]"
-      .map!"a[0]"
-      .array;
-
-    candidates ~= visible
-      .filter!(a => a.p.x < base.x && a.p.y <= base.y)
-      .map!(a => tuple(a.p, atan(cast(float)(a.p.y - base.y) / (base.x - a.p.x))))
-      .array
-      .sort!"a[1] > b[1]"
-      .map!"a[0]"
-      .array;
+    candidates ~= newCandidates;
 
     if (candidates.length < asteroids.length) {
-      remaining = remaining.setDifference(candidates.dup.sort).array;
+      remaining = remaining.setDifference(newCandidates.sort).array;
     }
   } while(remaining.length);
 
