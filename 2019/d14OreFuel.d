@@ -85,6 +85,11 @@ unittest {
   ]).solveFor(Quantity(5, "FUEL")) == Quantity(3, "ORE"));
 
   assert(withReactions([
+    "1 ORE => 1 WISH"
+  , "1 WISH => 1 FUEL"
+  ]).solveFor(Quantity(1, "FUEL")) == Quantity(1, "ORE"));
+
+  assert(withReactions([
     "10 ORE => 10 A"
   , "1 ORE => 1 B"
   , "7 A, 1 B => 1 C"
