@@ -49,42 +49,32 @@ struct Nanofactory {
       return Quantity(sameOf.map!"a.units".sum, of);
     }
 
-    return sumOf(
-      solution
+    solution = solution
         .sort!"a.of < b.of"
         .chunkBy!"a.of == b.of"
         .map!(c => sumOf(c.array))
         .map!(req => solveOne(req))
-        .array.join
-    );
+        .array.join;
+
+    return sumOf(solution);
   }
 }
 
 auto withReactions(R)(R reactions) {
-  import std.conv, std.regex;
+  import std.conv;
 
-  // match order is;
-  //   0: all
-  //   1: 1st requirement, 2: unit, 3: symbol
-  //   4-6: 2nd requirement if present, and so on
-  // $-3: output, $-2: unit, $-1: symbol
-  auto rxReaction = regex(r"^((\d+) (\w+))(, (\d+) (\w+))* => ((\d+) (\w+))");
-
-  Quantity toQty(R)(R matches) {
-    return Quantity(
-      matches.dropOne.front.to!Units  // matches[1]
-    , matches.dropOne.front.to!Symbol // matches[2]
-    );
+  Quantity toQty(string s) {
+    auto parts = s.split(" ");
+    return Quantity(parts[0].to!Units , parts[1].to!Symbol);
   }
 
   auto parser(string reactionSpec) {
-    auto matches = reactionSpec.matchFirst(rxReaction);
-    if (matches[0]) {
-      matches.popFront;
-      auto quantities = matches.chunks(3).filter!(ch => ch.front.length).map!(ch => toQty(ch)).array;
-      return Reaction(quantities.back, quantities.dropBackOne);
-    }
-    return Reaction();
+    auto parts = reactionSpec.split(" => ");
+    auto reqs = parts[0].split(", ");
+    return Reaction(
+      toQty(parts[1])
+    , reqs.map!(r => toQty(r)).array
+    );
   }
 
   return Nanofactory(reactions.map!(parser).array);
