@@ -190,4 +190,14 @@ unittest {
   , "7 XCVML => 6 RJRHP"
   , "5 BHXH, 4 VRPVC => 5 LTCX"
   ]).solveFor(oneFuel) == Quantity(2210736, "ORE"));
+} version (unittest) {} else {
+
+void main() {
+  import std.stdio;
+
+  withReactions(stdin.byLineCopy)
+    .solveFor(Quantity(1, "FUEL"))
+    .writeln;
+}
+
 }
