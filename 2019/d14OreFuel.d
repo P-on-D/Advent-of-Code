@@ -39,20 +39,23 @@ struct Nanofactory {
     Quantity[] previousSolution = [];
     Quantity[] solution = solveOne(required);
 
-    while(solution != previousSolution) {
-      previousSolution = solution;
-      solution = solution.map!(req => isBase(req.of) ? [req] : solveOne(req)).array.join;
-    }
-
     Quantity sumOf(Quantity[] sameOf) {
       Symbol of = sameOf.front.of;
       return Quantity(sameOf.map!"a.units".sum, of);
     }
 
-    solution = solution
+    while(solution != previousSolution) {
+      previousSolution = solution;
+      solution = solution
+        .map!(req => isBase(req.of) ? [req] : solveOne(req))
+        .array.join
         .sort!"a.of < b.of"
         .chunkBy!"a.of == b.of"
         .map!(c => sumOf(c.array))
+        .array;
+    }
+
+    solution = solution
         .map!(req => solveOne(req))
         .array.join;
 
