@@ -19,7 +19,11 @@ struct Nanofactory {
   auto solveFor(Quantity required) {
     auto sources = reactions.find!(r => r.qty.of == required.of);
     if (!sources.empty) {
-      return sources[0].requires[0];
+      Reaction reaction = sources.front;
+      Quantity source = reaction.requires.front;
+
+      auto scale = (required.units / reaction.qty.units) + (required.units % reaction.qty.units != 0);
+      return Quantity(scale * source.units, source.of);
     }
     return required;
   }
@@ -75,6 +79,10 @@ unittest {
   assert(withReactions([
     "3 ORE => 2 FUEL"
   ]).solveFor(Quantity(5, "FUEL")) == Quantity(9, "ORE"));
+
+  assert(withReactions([
+    "3 ORE => 17 FUEL"
+  ]).solveFor(Quantity(5, "FUEL")) == Quantity(3, "ORE"));
 
   assert(withReactions([
     "10 ORE => 10 A"
