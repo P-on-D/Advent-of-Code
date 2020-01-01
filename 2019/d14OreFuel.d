@@ -16,18 +16,47 @@ struct Reaction {
 struct Nanofactory {
   Reaction[] reactions;
 
-  Quantity solveFor(Quantity required) {
+  Quantity[] solveOne(Quantity required) {
     auto sources = reactions.find!(r => r.qty.of == required.of);
     if (!sources.empty) {
       Reaction reaction = sources.front;
-      Quantity source = reaction.requires.front;
 
       auto scale = (required.units / reaction.qty.units) + (required.units % reaction.qty.units != 0);
-      source.units *= scale;
-
-      return source.of == required.of ? source : solveFor(source);
+      return reaction.requires.map!(r => Quantity(r.units * scale, r.of)).array;
     }
-    return required;
+
+    return [required];
+  }
+
+  bool isBase(Symbol s) {
+    auto r = reactions.find!(r => r.qty.of == s);
+    return r.empty
+      ? true
+      : !reactions.canFind!(r2 => r2.qty.of == r.front.requires.front.of);
+  }
+
+  Quantity solveFor(Quantity required) {
+    Quantity[] previousSolution = [];
+    Quantity[] solution = solveOne(required);
+
+    while(solution != previousSolution) {
+      previousSolution = solution;
+      solution = solution.map!(req => isBase(req.of) ? [req] : solveOne(req)).array.join;
+    }
+
+    Quantity sumOf(Quantity[] sameOf) {
+      Symbol of = sameOf.front.of;
+      return Quantity(sameOf.map!"a.units".sum, of);
+    }
+
+    return sumOf(
+      solution
+        .sort!"a.of < b.of"
+        .chunkBy!"a.of == b.of"
+        .map!(c => sumOf(c.array))
+        .map!(req => solveOne(req))
+        .array.join
+    );
   }
 }
 
@@ -39,7 +68,7 @@ auto withReactions(R)(R reactions) {
   //   1: 1st requirement, 2: unit, 3: symbol
   //   4-6: 2nd requirement if present, and so on
   // $-3: output, $-2: unit, $-1: symbol
-  auto rxReaction = regex(r"( ?(\d+) (\w+),?)+ => ((\d+) (\w+))");
+  auto rxReaction = regex(r"^((\d+) (\w+))(, (\d+) (\w+))* => ((\d+) (\w+))");
 
   Quantity toQty(R)(R matches) {
     return Quantity(
@@ -52,7 +81,7 @@ auto withReactions(R)(R reactions) {
     auto matches = reactionSpec.matchFirst(rxReaction);
     if (matches[0]) {
       matches.popFront;
-      auto quantities = matches.chunks(3).map!(ch => toQty(ch)).array;
+      auto quantities = matches.chunks(3).filter!(ch => ch.front.length).map!(ch => toQty(ch)).array;
       return Reaction(quantities.back, quantities.dropBackOne);
     }
     return Reaction();
