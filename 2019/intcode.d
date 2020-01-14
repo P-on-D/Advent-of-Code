@@ -6,8 +6,9 @@ alias LongCode = IntCodeT!long;
 struct IntCodeT(T) {
   alias Word = T;
 
-  this(Word[] program) {
+  this(Word[] program, uint capacity = 65536) {
     memory = program.dup;
+    memory.length = capacity;
   }
 
   Word[] memory;
@@ -43,9 +44,9 @@ struct IntCodeT(T) {
       auto param = memory[PC+n];
 
       final switch (mode) {
-        case Mode.Pos: if (memory.length <= param) memory.length = param+1; return memory[param];
+        case Mode.Pos: return memory[param];
         case Mode.Imm: return param;
-        case Mode.Rel: if (memory.length <= RB+param) memory.length = RB+param+1; return memory[RB+param];
+        case Mode.Rel: return memory[RB+param];
       }
     }
 
@@ -53,9 +54,9 @@ struct IntCodeT(T) {
       auto param = memory[PC+n];
 
       final switch (mode) {
-        case Mode.Pos: if (memory.length <= param) memory.length = param+1; memory[param] = v; return;
+        case Mode.Pos: memory[param] = v; return;
         case Mode.Imm: return;
-        case Mode.Rel: if (memory.length <= RB+param) memory.length = RB+param+1; memory[RB+param] = v; return;
+        case Mode.Rel: memory[RB+param] = v; return;
       }
     }
 
@@ -107,7 +108,7 @@ struct IntCodeT(T) {
 unittest {
   IntCode ic = IntCode([1,9,10,3,2,3,11,0,99,30,40,50]);
   ic.run();
-  assert(ic.memory == [3500,9,10,70,2,3,11,0,99,30,40,50]);
+  assert(ic.memory[0..12] == [3500,9,10,70,2,3,11,0,99,30,40,50]);
 
   ic.memory = [1, 0, 0, 0, 99];
   ic.run();
