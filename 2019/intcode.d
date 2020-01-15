@@ -40,40 +40,42 @@ struct IntCodeT(T) {
     Mode m2 = to!Mode((opcode / 1000) % 10);
     Mode m3 = to!Mode((opcode / 10000) % 10);
 
-    Word ld(Addr n, Mode mode) {
+    Word ld(Addr n)() if (n >= 1 && n <= 3) {
       auto param = memory[PC+n];
+      auto mode = mixin( "m" ~ to!string(n) );
 
-      final switch (mode) {
-        case Mode.Pos: return memory[param];
-        case Mode.Imm: return param;
-        case Mode.Rel: return memory[RB+param];
+      final switch (mode) with (Mode) {
+        case Pos: return memory[param];
+        case Imm: return param;
+        case Rel: return memory[RB+param];
       }
     }
 
-    void st(Addr n, Mode mode, Word v) {
+    void st(Addr n)(Word v) if (n >= 1 && n <= 3) {
       auto param = memory[PC+n];
+      auto mode = mixin( "m" ~ to!string(n) );
 
-      final switch (mode) {
-        case Mode.Pos: memory[param] = v; return;
-        case Mode.Imm: return;
-        case Mode.Rel: memory[RB+param] = v; return;
+      final switch (mode) with (Mode) {
+        case Pos: memory[param] = v; return;
+        case Imm: return;
+        case Rel: memory[RB+param] = v; return;
       }
     }
 
     Opcode op = to!Opcode(opcode % 100);
 
-    final switch (op) {
-      case Opcode.JT:  PC = (ld(1, m1) != 0) ? ld(2, m2) : (PC + 3); return true;
-      case Opcode.JF:  PC = (ld(1, m1) == 0) ? ld(2, m2) : (PC + 3); return true;
-      case Opcode.Add: st(3, m3, ld(1, m1) + ld(2, m2)); PC = PC + 4; return true;
-      case Opcode.Mul: st(3, m3, ld(1, m1) * ld(2, m2)); PC = PC + 4; return true;
-      case Opcode.Lt:  st(3, m3, ld(1, m1) < ld(2, m2)); PC = PC + 4; return true;
-      case Opcode.Eq:  st(3, m3, ld(1, m1) == ld(2, m2)); PC = PC + 4; return true;
-      case Opcode.In:  if (input.empty) return false;
-                       st(1, m1, input.front); input.popFront; PC = PC + 2; return true;
-      case Opcode.Out: output ~= ld(1, m1); PC = PC + 2; return !feedback;
-      case Opcode.Rel: RB += ld(1, m1); PC = PC + 2; return true;
-      case Opcode.End: halted = true; return false;
+    final switch (op) with (Opcode) {
+      case JT:  PC = (ld!1 != 0) ? ld!2 : (PC + 3); return true;
+      case JF:  PC = (ld!1 == 0) ? ld!2 : (PC + 3); return true;
+      case Add: st!3(ld!1 + ld!2); PC = PC + 4; return true;
+      case Mul: st!3(ld!1 * ld!2); PC = PC + 4; return true;
+      case Lt:  st!3(ld!1 < ld!2); PC = PC + 4; return true;
+      case Eq:  st!3(ld!1 == ld!2); PC = PC + 4; return true;
+      case In:  if (input.empty) return false;
+                st!1(input.front); input.popFront; PC = PC + 2; return true;
+      case Out: output ~= ld!1; PC = PC + 2; return !feedback;
+      case Rel: RB += ld!1; PC = PC + 2; return true;
+      case End: halted = true; return false;
     }
   }
 
