@@ -21,24 +21,28 @@ struct IntCodeT(T) {
   bool halted = true;
   bool feedback = false;
 
-  enum Opcode {
-    Add = 1, Mul
-  , In = 3, Out
-  , JT = 5, JF
-  , Lt = 7, Eq
-  , Rel = 9
-  , End = 99
+  struct Opcode {
+    enum {
+      Add = 1, Mul
+    , In = 3, Out
+    , JT = 5, JF
+    , Lt = 7, Eq
+    , Rel = 9
+    , End = 99
+    }
   }
 
-  enum Mode { Pos, Imm, Rel }
+  struct Mode {
+    enum { Pos, Imm, Rel }
+  }
 
   bool execute() {
     import std.conv, std.range;
 
     auto opcode = memory[PC];
-    Mode m1 = to!Mode((opcode / 100) % 10);
-    Mode m2 = to!Mode((opcode / 1000) % 10);
-    Mode m3 = to!Mode((opcode / 10000) % 10);
+    auto m1 = (opcode / 100) % 10
+       , m2 = (opcode / 1000) % 10
+       , m3 = (opcode / 10000) % 10;
 
     Word ld(Addr n)() if (n >= 1 && n <= 3) {
       auto param = memory[PC+n];
@@ -62,7 +66,7 @@ struct IntCodeT(T) {
       }
     }
 
-    Opcode op = to!Opcode(opcode % 100);
+    auto op = opcode % 100;
 
     final switch (op) with (Opcode) {
       case JT:  PC = (ld!1 != 0) ? ld!2 : (PC + 3); return true;
