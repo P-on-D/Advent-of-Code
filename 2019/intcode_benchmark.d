@@ -36,7 +36,6 @@ auto benchmark() {
     } else {
       Pt pt = Pt(cast(int)x[0], cast(int)y[0]);
       if (t[0] == 4) ball = pt; else if(t[0] == 3) paddle = pt;
-      grid[pt] = cast(ubyte)t[0];
     }
 
     import std.math;
