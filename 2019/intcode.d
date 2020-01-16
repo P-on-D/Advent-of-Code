@@ -44,33 +44,33 @@ struct IntCodeT(T) {
     import std.array, std.conv, std.range;
 
     string cases(string op, uint loads, uint store, string executor) {
+      import std.format;
+
       auto accs = [Access.None, Access.None, Access.None];
       auto modes = [[0], [0], [0]];
 
       string generate(int a, int m, int arg) {
         if (a == Access.None) return "";
 
-        string p = "memory[PC+"~to!string(arg)~"]";
-        string access = "auto ";
+        string p = "memory[PC+%d]".format(arg);
+        string access;
 
         if (a == Access.Load) {
-          access ~= "ld" ~ to!string(arg) ~ " = ";
           switch (m) {
-            case Mode.Pos: access ~= "memory["~p~"]"; break;
-            case Mode.Imm: access ~= p; break;
-            case Mode.Rel: access ~= "memory[RB+"~p~"]"; break;
+            case Mode.Pos: access = "memory["~p~"]"; break;
+            case Mode.Imm: access = p; break;
+            case Mode.Rel: access = "memory[RB+"~p~"]"; break;
             default: break;
           }
         } else {
-          access ~= "o = ";
           switch (m) {
-            case Mode.Pos: access ~= p; break;
-            case Mode.Rel: access ~= "RB+"~p; break;
+            case Mode.Pos: access = p; break;
+            case Mode.Rel: access = "RB+"~p; break;
             default: break;
           }
         }
 
-        return access ~ ";";
+        return "auto a%d = %s;".format(arg, access);
       }
 
       if (store) {
@@ -95,7 +95,7 @@ struct IntCodeT(T) {
           foreach(m3; modes[2]) {
             auto offset = 10000 * m3 + 1000 * m2 + 100 * m1;
 
-            output ~= "case " ~ to!string(offset) ~ " + " ~ op ~ ": ";
+            output ~= "case %d + %s:".format(offset, op);
             output ~= generate(accs[0], m1, 1);
             output ~= generate(accs[1], m2, 2);
             output ~= generate(accs[2], m3, 3);
@@ -111,18 +111,24 @@ struct IntCodeT(T) {
     auto opcode = memory[PC];
 
     switch (opcode) with (Opcode) {
-      mixin(cases("JT", 2, 0, q{ PC = (ld1 != 0) ? ld2 : (PC + 3); goto AndCarryOn; }));
-      mixin(cases("JF", 2, 0, q{ PC = (ld1 == 0) ? ld2 : (PC + 3); goto AndCarryOn; }));
-      mixin(cases("Add", 2, 3, q{ memory[o] = (ld1 + ld2); PC = PC + 4; goto AndCarryOn; }));
-      mixin(cases("Mul", 2, 3, q{ memory[o] = (ld1 * ld2); PC = PC + 4; goto AndCarryOn; }));
-      mixin(cases("Lt", 2, 3, q{ memory[o] = (ld1 < ld2); PC = PC + 4; goto AndCarryOn; }));
-      mixin(cases("Eq", 2, 3, q{ memory[o] = (ld1 == ld2); PC = PC + 4; goto AndCarryOn; }));
-      mixin(cases("In", 0, 1, q{ if (input.empty) return;
-                                 memory[o] = input.front; input.popFront; PC = PC + 2; goto AndCarryOn; }));
-      mixin(cases("Out", 1, 0, q{ output ~= ld1; PC = PC + 2;
-                                  if (feedback) return; else goto AndCarryOn; }));
-      mixin(cases("Rel", 1, 0, q{ RB += ld1; PC = PC + 2; goto AndCarryOn; }));
       case End: halted = true; return;
+
+      mixin(cases( "JT",  2, 0, q{ PC = (a1 != 0) ? a2 : (PC + 3); goto AndCarryOn; } ));
+      mixin(cases( "JF",  2, 0, q{ PC = (a1 == 0) ? a2 : (PC + 3); goto AndCarryOn; } ));
+
+      mixin(cases( "Add", 2, 3, q{ memory[a3] = (a1 + a2); PC = PC + 4; goto AndCarryOn; } ));
+      mixin(cases( "Mul", 2, 3, q{ memory[a3] = (a1 * a2); PC = PC + 4; goto AndCarryOn; } ));
+      mixin(cases( "Lt",  2, 3, q{ memory[a3] = (a1 < a2); PC = PC + 4; goto AndCarryOn; } ));
+      mixin(cases( "Eq",  2, 3, q{ memory[a3] = (a1 == a2); PC = PC + 4; goto AndCarryOn; } ));
+
+      mixin(cases( "In",  0, 1, q{ if (input.empty) return;
+                                   memory[a1] = input.front; input.popFront; PC = PC + 2; goto AndCarryOn; } ));
+
+      mixin(cases( "Out", 1, 0, q{ output ~= a1; PC = PC + 2;
+                                   if (feedback) return; else goto AndCarryOn; } ));
+
+      mixin(cases( "Rel", 1, 0, q{ RB += a1; PC = PC + 2; goto AndCarryOn; } ));
+
       default:
         PC = PC + 1;
         import std.stdio;
