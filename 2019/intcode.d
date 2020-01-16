@@ -36,50 +36,96 @@ struct IntCodeT(T) {
     enum { Pos, Imm, Rel }
   }
 
+  struct Access {
+    enum { None, Load, Store }
+  }
+
   bool execute() {
-    import std.conv, std.range;
+    import std.array, std.conv, std.range;
+
+    string cases(string op, uint loads, uint store, string executor) {
+      auto accs = [Access.None, Access.None, Access.None];
+      auto modes = [[0], [0], [0]];
+
+      string generate(int a, int m, int arg) {
+        if (a == Access.None) return "";
+
+        string p = "memory[PC+"~to!string(arg)~"]";
+        string access = "auto ";
+
+        if (a == Access.Load) {
+          access ~= "ld" ~ to!string(arg) ~ " = ";
+          switch (m) {
+            case Mode.Pos: access ~= "memory["~p~"]"; break;
+            case Mode.Imm: access ~= p; break;
+            case Mode.Rel: access ~= "memory[RB+"~p~"]"; break;
+            default: break;
+          }
+        } else {
+          access ~= "o = ";
+          switch (m) {
+            case Mode.Pos: access ~= p; break;
+            case Mode.Rel: access ~= "RB+"~p; break;
+            default: break;
+          }
+        }
+
+        return access ~ ";";
+      }
+
+      if (store) {
+        accs[store-1] = Access.Store;
+        modes[store-1] = [0, 2];
+      }
+
+      if (loads >= 1) {
+        accs[0] = Access.Load;
+        modes[0] = [0, 1, 2];
+      }
+
+      if(loads == 2) {
+        accs[1] = Access.Load;
+        modes[1] = [0, 1, 2];
+      }
+
+      string output;
+
+      foreach(m1; modes[0]) {
+        foreach(m2; modes[1]) {
+          foreach(m3; modes[2]) {
+            auto offset = 10000 * m3 + 1000 * m2 + 100 * m1;
+
+            output ~= "case " ~ to!string(offset) ~ " + " ~ op ~ ": ";
+            output ~= generate(accs[0], m1, 1);
+            output ~= generate(accs[1], m2, 2);
+            output ~= generate(accs[2], m3, 3);
+            output ~= executor;
+          }
+        }
+      }
+
+      return output;
+    }
 
     auto opcode = memory[PC];
-    auto m1 = (opcode / 100) % 10
-       , m2 = (opcode / 1000) % 10
-       , m3 = (opcode / 10000) % 10;
 
-    Word ld(Addr n)() if (n >= 1 && n <= 3) {
-      auto param = memory[PC+n];
-      auto mode = mixin( "m" ~ to!string(n) );
-
-      final switch (mode) with (Mode) {
-        case Pos: return memory[param];
-        case Imm: return param;
-        case Rel: return memory[RB+param];
-      }
-    }
-
-    void st(Addr n)(Word v) if (n >= 1 && n <= 3) {
-      auto param = memory[PC+n];
-      auto mode = mixin( "m" ~ to!string(n) );
-
-      final switch (mode) with (Mode) {
-        case Pos: memory[param] = v; return;
-        case Imm: return;
-        case Rel: memory[RB+param] = v; return;
-      }
-    }
-
-    auto op = opcode % 100;
-
-    final switch (op) with (Opcode) {
-      case JT:  PC = (ld!1 != 0) ? ld!2 : (PC + 3); return true;
-      case JF:  PC = (ld!1 == 0) ? ld!2 : (PC + 3); return true;
-      case Add: st!3(ld!1 + ld!2); PC = PC + 4; return true;
-      case Mul: st!3(ld!1 * ld!2); PC = PC + 4; return true;
-      case Lt:  st!3(ld!1 < ld!2); PC = PC + 4; return true;
-      case Eq:  st!3(ld!1 == ld!2); PC = PC + 4; return true;
-      case In:  if (input.empty) return false;
-                st!1(input.front); input.popFront; PC = PC + 2; return true;
-      case Out: output ~= ld!1; PC = PC + 2; return !feedback;
-      case Rel: RB += ld!1; PC = PC + 2; return true;
+    switch (opcode) with (Opcode) {
+      mixin(cases("JT", 2, 0, q{ PC = (ld1 != 0) ? ld2 : (PC + 3); return true; }));
+      mixin(cases("JF", 2, 0, q{ PC = (ld1 == 0) ? ld2 : (PC + 3); return true; }));
+      mixin(cases("Add", 2, 3, q{ memory[o] = (ld1 + ld2); PC = PC + 4; return true; }));
+      mixin(cases("Mul", 2, 3, q{ memory[o] = (ld1 * ld2); PC = PC + 4; return true; }));
+      mixin(cases("Lt", 2, 3, q{ memory[o] = (ld1 < ld2); PC = PC + 4; return true; }));
+      mixin(cases("Eq", 2, 3, q{ memory[o] = (ld1 == ld2); PC = PC + 4; return true; }));
+      mixin(cases("In", 0, 1, q{ if (input.empty) return false;
+                                 memory[o] = input.front; input.popFront; PC = PC + 2; return true; }));
+      mixin(cases("Out", 1, 0, q{ output ~= ld1; PC = PC + 2; return !feedback; }));
+      mixin(cases("Rel", 1, 0, q{ RB += ld1; PC = PC + 2; return true; }));
       case End: halted = true; return false;
+      default:
+        PC = PC + 1;
+        import std.stdio;
+        writefln("Opcode %s at %s not understood", opcode, PC);
+        return false;
     }
   }
 
