@@ -40,7 +40,7 @@ struct IntCodeT(T) {
     enum { None, Load, Store }
   }
 
-  bool execute() {
+  void execute() {
     import std.array, std.conv, std.range;
 
     string cases(string op, uint loads, uint store, string executor) {
@@ -107,25 +107,27 @@ struct IntCodeT(T) {
       return output;
     }
 
+  AndCarryOn:
     auto opcode = memory[PC];
 
     switch (opcode) with (Opcode) {
-      mixin(cases("JT", 2, 0, q{ PC = (ld1 != 0) ? ld2 : (PC + 3); return true; }));
-      mixin(cases("JF", 2, 0, q{ PC = (ld1 == 0) ? ld2 : (PC + 3); return true; }));
-      mixin(cases("Add", 2, 3, q{ memory[o] = (ld1 + ld2); PC = PC + 4; return true; }));
-      mixin(cases("Mul", 2, 3, q{ memory[o] = (ld1 * ld2); PC = PC + 4; return true; }));
-      mixin(cases("Lt", 2, 3, q{ memory[o] = (ld1 < ld2); PC = PC + 4; return true; }));
-      mixin(cases("Eq", 2, 3, q{ memory[o] = (ld1 == ld2); PC = PC + 4; return true; }));
-      mixin(cases("In", 0, 1, q{ if (input.empty) return false;
-                                 memory[o] = input.front; input.popFront; PC = PC + 2; return true; }));
-      mixin(cases("Out", 1, 0, q{ output ~= ld1; PC = PC + 2; return !feedback; }));
-      mixin(cases("Rel", 1, 0, q{ RB += ld1; PC = PC + 2; return true; }));
-      case End: halted = true; return false;
+      mixin(cases("JT", 2, 0, q{ PC = (ld1 != 0) ? ld2 : (PC + 3); goto AndCarryOn; }));
+      mixin(cases("JF", 2, 0, q{ PC = (ld1 == 0) ? ld2 : (PC + 3); goto AndCarryOn; }));
+      mixin(cases("Add", 2, 3, q{ memory[o] = (ld1 + ld2); PC = PC + 4; goto AndCarryOn; }));
+      mixin(cases("Mul", 2, 3, q{ memory[o] = (ld1 * ld2); PC = PC + 4; goto AndCarryOn; }));
+      mixin(cases("Lt", 2, 3, q{ memory[o] = (ld1 < ld2); PC = PC + 4; goto AndCarryOn; }));
+      mixin(cases("Eq", 2, 3, q{ memory[o] = (ld1 == ld2); PC = PC + 4; goto AndCarryOn; }));
+      mixin(cases("In", 0, 1, q{ if (input.empty) return;
+                                 memory[o] = input.front; input.popFront; PC = PC + 2; goto AndCarryOn; }));
+      mixin(cases("Out", 1, 0, q{ output ~= ld1; PC = PC + 2;
+                                  if (feedback) return; else goto AndCarryOn; }));
+      mixin(cases("Rel", 1, 0, q{ RB += ld1; PC = PC + 2; goto AndCarryOn; }));
+      case End: halted = true; return;
       default:
         PC = PC + 1;
         import std.stdio;
         writefln("Opcode %s at %s not understood", opcode, PC);
-        return false;
+        return;
     }
   }
 
@@ -136,7 +138,7 @@ struct IntCodeT(T) {
     RB = 0;
     halted = false;
 
-    while(execute()) {}
+    execute;
 
     return output;
   }
@@ -146,7 +148,7 @@ struct IntCodeT(T) {
     if (halted) return output;
     if (feedback) output = [];
 
-    while(execute()) {}
+    execute;
 
     return output;
   }
