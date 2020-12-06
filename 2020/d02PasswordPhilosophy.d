@@ -27,11 +27,21 @@ DatabaseEntry parseToDatabaseEntry(T)(T line) {
   return d;
 }
 
-bool validate(DatabaseEntry d) {
+bool validateByCount(DatabaseEntry d) {
   import std.algorithm : count;
 
   auto occurrences = d.password.count(d.policy.letter);
   return occurrences >= d.policy.minCount && occurrences <= d.policy.maxCount;
+}
+
+bool validateByPosition(DatabaseEntry d) {
+  auto validAtPosition = (uint n) => d.password[n - 1] == d.policy.letter;
+
+  return
+    validAtPosition(d.policy.minCount)
+    ^ // xor
+    validAtPosition(d.policy.maxCount)
+  ;
 }
 
 unittest {
@@ -48,9 +58,13 @@ unittest {
   assert(parsed[1] == DatabaseEntry(Policy(1, 3, 'b'), "cdefg"));
   assert(parsed[2] == DatabaseEntry(Policy(2, 9, 'c'), "ccccccccc"));
 
-  assert(parsed[0].validate);
-  assert(!parsed[1].validate);
-  assert(parsed[2].validate);
+  assert(parsed[0].validateByCount);
+  assert(!parsed[1].validateByCount);
+  assert(parsed[2].validateByCount);
+
+  assert(parsed[0].validateByPosition);
+  assert(!parsed[1].validateByPosition);
+  assert(!parsed[2].validateByPosition);
 }
 
 void main() {
@@ -61,5 +75,6 @@ void main() {
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
   auto input = data.map!parseToDatabaseEntry;
 
-  input.filter!validate.count.writeln;
+  input.filter!validateByCount.count.writeln;
+  input.filter!validateByPosition.count.writeln;
 }
