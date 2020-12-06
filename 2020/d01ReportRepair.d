@@ -2,8 +2,15 @@
 // Day 1: Report Repair
 
 auto elementsThatSumTo(R, T)(R input, T sumTarget) {
-  import std.algorithm : cartesianProduct, filter;
-  return cartesianProduct(input, input).filter!(a => a[0] + a[1] == sumTarget).front;
+  import std.algorithm : cartesianProduct, filter, map;
+  import std.range : enumerate;
+  import std.typecons : tuple;
+
+  auto indexedInput = input.enumerate;
+  return indexedInput.cartesianProduct(indexedInput)
+    .filter!(a => a[0].index != a[1].index && a[0].value + a[1].value == sumTarget)
+    .map!(a => tuple(a[0].value, a[1].value))
+    .front;
 }
 
 unittest {
