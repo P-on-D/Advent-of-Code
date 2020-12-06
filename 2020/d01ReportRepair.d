@@ -33,6 +33,14 @@ unittest {
   assert(result[1] == 299);
 }
 
-void main(string[] args) {
-  
+void main() {
+  import std.algorithm : map, splitter;
+  import std.conv : to;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.map!(to!int);
+  auto result = input.elementsThatSumTo(2020);
+  writeln(result[0] * result[1]);
 }
