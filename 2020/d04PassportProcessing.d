@@ -47,4 +47,13 @@ unittest {
   assert(validity.equal([true, false, true, false]));
 }
 
-void main() {}
+void main() {
+  import std.algorithm : count, filter, splitter;
+  import std.array : array;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.array.parsePassportBatch;
+  input.filter!passportValid.count.writeln;
+}
