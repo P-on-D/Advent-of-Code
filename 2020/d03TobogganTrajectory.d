@@ -35,4 +35,13 @@ unittest {
   assert(input.traverseTerrain(3, 1).count('#') == 7);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : count, filter, map, splitter;
+  import std.array : array;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.array;
+  input.traverseTerrain(3, 1).count('#').writeln;
+}
