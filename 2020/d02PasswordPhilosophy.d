@@ -27,6 +27,13 @@ DatabaseEntry parseToDatabaseEntry(T)(T line) {
   return d;
 }
 
+bool validate(DatabaseEntry d) {
+  import std.algorithm : count;
+
+  auto occurrences = d.password.count(d.policy.letter);
+  return occurrences >= d.policy.minCount && occurrences <= d.policy.maxCount;
+}
+
 unittest {
   import std.algorithm : map;
 
@@ -40,6 +47,10 @@ unittest {
   assert(parsed[0] == DatabaseEntry(Policy(1, 3, 'a'), "abcde"));
   assert(parsed[1] == DatabaseEntry(Policy(1, 3, 'b'), "cdefg"));
   assert(parsed[2] == DatabaseEntry(Policy(2, 9, 'c'), "ccccccccc"));
+
+  assert(parsed[0].validate);
+  assert(!parsed[1].validate);
+  assert(parsed[2].validate);
 }
 
 void main() {}
