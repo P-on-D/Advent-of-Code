@@ -53,4 +53,13 @@ unittest {
   assert(parsed[2].validate);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : count, filter, map, splitter;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.map!parseToDatabaseEntry;
+
+  input.filter!validate.count.writeln;
+}
