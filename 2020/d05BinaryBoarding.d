@@ -35,5 +35,8 @@ void main() {
   import std.stdio;
 
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
-  data.map!seatID.maxElement.writeln;
+  auto input = data.map!seatID;
+
+  input.maxElement.writeln;
+  input.missingID.writeln;
 }
