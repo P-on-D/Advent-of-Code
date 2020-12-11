@@ -23,7 +23,7 @@ class PassportValidator {
 
     auto height = to!int(match[1]);
     return (match[2] == "cm" && height >= 150 && height <= 193)
-      || (height >= 59 && height <= 76);
+      || (match[2] == "in" && height >= 59 && height <= 76);
   }
 
   validator eyeColourValid = (string value) => !matchFirst(value, `^(amb|blu|brn|gry|grn|hzl|oth)$`).empty;
@@ -138,6 +138,7 @@ unittest {
   assert(validator.heightValid("170cm"));
   assert(validator.heightValid("193cm"));
   assert(!validator.heightValid("194cm"));
+  assert(!validator.heightValid("64cm"));
   assert(!validator.heightValid("193"));
 
   assert(!validator.heightValid("58in"));
