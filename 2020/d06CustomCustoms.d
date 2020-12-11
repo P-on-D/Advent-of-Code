@@ -16,4 +16,14 @@ unittest {
   assert(["b"].yesAnswers == 1);
 }
 
-void main() {}
+void main() {
+  import std.array : array;
+  import std.algorithm : map, splitter, sum;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.array.splitter("");
+
+  input.map!yesAnswers.sum.writeln;
+}
