@@ -7,6 +7,20 @@ auto yesAnswers(R)(R input) {
   return input.joiner.array.sort.uniq.count;
 }
 
+auto allYesAnswers(R)(R input) {
+  import std.algorithm : count;
+
+  int[char] histo;
+
+  foreach(line; input) {
+    foreach(ch; line) {
+      ++histo[ch];
+    }
+  }
+
+  return histo.byValue.count(input.length);
+}
+
 unittest {
   assert(["abcx", "abcy" , "abcz"].yesAnswers == 6);
   assert(["abc"].yesAnswers == 3);
@@ -14,6 +28,13 @@ unittest {
   assert(["ab", "ac"].yesAnswers == 3);
   assert(["a", "a", "a", "a"].yesAnswers == 1);
   assert(["b"].yesAnswers == 1);
+
+  assert(["abcx", "abcy" , "abcz"].allYesAnswers == 3);
+  assert(["abc"].allYesAnswers == 3);
+  assert(["a", "b", "c"].allYesAnswers == 0);
+  assert(["ab", "ac"].allYesAnswers == 1);
+  assert(["a", "a", "a", "a"].allYesAnswers == 1);
+  assert(["b"].allYesAnswers == 1);
 }
 
 void main() {
@@ -26,4 +47,5 @@ void main() {
   auto input = data.array.splitter("");
 
   input.map!yesAnswers.sum.writeln;
+  input.map!allYesAnswers.sum.writeln;
 }
