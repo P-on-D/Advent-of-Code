@@ -17,4 +17,11 @@ unittest {
   assert("BBFFBBFRLL".seatID == 820);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : map, maxElement, splitter;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  data.map!seatID.maxElement.writeln;
+}
