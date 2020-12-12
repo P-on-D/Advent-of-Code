@@ -65,4 +65,13 @@ unittest {
   assert(input.map!parseInstruction.array.haltingExecutor == 5);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : map, splitter;
+  import std.array : array;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto program = data.map!parseInstruction.array;
+  program.haltingExecutor.writeln;
+}
