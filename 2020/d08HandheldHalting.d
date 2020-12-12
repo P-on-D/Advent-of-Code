@@ -17,8 +17,26 @@ Instr parseInstruction(string line) {
   );
 }
 
+auto haltingExecutor(Instr [] program) {
+  int PC, acc;
+  bool[] visited = new bool[program.length];
+
+  while(!visited[PC]) {
+    visited[PC] = true;
+
+    final switch (program[PC].op) {
+      case Op.Nop: PC += 1; break;
+      case Op.Acc: acc += program[PC].arg; PC += 1; break;
+      case Op.Jmp: PC += program[PC].arg; break;
+    }
+  }
+
+  return acc;
+}
+
 unittest {
   import std.algorithm : equal, map;
+  import std.array : array;
 
   auto input = [
     "nop +0",
@@ -43,6 +61,8 @@ unittest {
     Instr(Op.Jmp, -4),
     Instr(Op.Acc, 6)
   ]));
+
+  assert(input.map!parseInstruction.array.haltingExecutor == 5);
 }
 
 void main() {}
