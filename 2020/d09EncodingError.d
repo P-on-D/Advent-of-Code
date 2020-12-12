@@ -1,7 +1,7 @@
 // Advent of Code 2020 https://adventofcode.com/2020/day/9
 // Day 9: Encoding Error
 
-bool validNext(uint preambleLen, R)(R given, int testValue) {
+bool validNext(uint preambleLen, R, T)(R given, T testValue) {
   import std.algorithm : canFind, cartesianProduct, filter, map;
 
   auto testRange = given[$-preambleLen..$];
@@ -11,7 +11,7 @@ bool validNext(uint preambleLen, R)(R given, int testValue) {
     .canFind(testValue);
 }
 
-int findInvalid(uint preambleLen, R)(R given) {
+auto findInvalid(uint preambleLen, R)(R given) {
   import std.range : slide;
 
   foreach(window; given.slide(preambleLen+1)) {
@@ -44,4 +44,15 @@ unittest {
   );
 }
 
-void main() {}
+void main() {
+  import std.algorithm : map, splitter;
+  import std.array : array;
+  import std.conv : to;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.map!(to!ulong).array;
+
+  input.findInvalid!25.writeln;
+}
