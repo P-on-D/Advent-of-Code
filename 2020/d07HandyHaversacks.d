@@ -125,4 +125,5 @@ void main() {
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
   auto containers = data.map!parseContainer;
   containers.allThatContain("shiny gold").length.writeln;
+  containers.totalBagsInside("shiny gold").writeln;
 }
