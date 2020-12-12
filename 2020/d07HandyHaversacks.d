@@ -54,6 +54,19 @@ Container[] allThatContain(R)(R containers, string type) {
   return canContain.sort!"a.type < b.type".uniq!"a.type == b.type".array;
 }
 
+uint totalBagsInside(R)(R containers, string type) {
+  import std.algorithm : each, find;
+
+  uint total;
+  auto bag = containers.find!"a.type == b"(type);
+
+  if (!bag.empty) {
+    bag.front.content.each!(c => total += c.count + c.count * containers.totalBagsInside(c.type));
+  }
+
+  return total;
+}
+
 unittest {
   import std.algorithm : equal, map, sort, uniq;
   import std.array : array;
@@ -91,6 +104,17 @@ unittest {
   assert(containers.allThatContain("shiny gold").map!"a.type".equal([
     "bright white", "dark orange", "light red", "muted yellow"
   ]));
+
+  assert(containers.totalBagsInside("shiny gold") == 32);
+  assert([
+    "shiny gold bags contain 2 dark red bags.",
+    "dark red bags contain 2 dark orange bags.",
+    "dark orange bags contain 2 dark yellow bags.",
+    "dark yellow bags contain 2 dark green bags.",
+    "dark green bags contain 2 dark blue bags.",
+    "dark blue bags contain 2 dark violet bags.",
+    "dark violet bags contain no other bags."
+  ].map!parseContainer.totalBagsInside("shiny gold") == 126);
 }
 
 void main() {
