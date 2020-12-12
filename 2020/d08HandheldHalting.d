@@ -89,4 +89,5 @@ void main() {
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
   auto program = data.map!parseInstruction.array;
   program.haltingExecutor[0].writeln;
+  program.fixingExecutor.writeln;
 }
