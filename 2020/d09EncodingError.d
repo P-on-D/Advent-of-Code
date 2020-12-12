@@ -73,4 +73,5 @@ void main() {
   auto input = data.map!(to!ulong).array;
 
   input.findInvalid!25.writeln;
+  input.encryptionWeakness!25.writeln;
 }
