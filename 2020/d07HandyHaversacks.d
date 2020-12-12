@@ -84,13 +84,21 @@ unittest {
 
   auto containers = input.map!parseContainer;
 
-  assert(containers.thatContain("shiny gold").map!(c => c.type).array.sort.equal([
+  assert(containers.thatContain("shiny gold").map!"a.type".array.sort.equal([
     "bright white", "muted yellow"
   ]));
 
-  assert(containers.allThatContain("shiny gold").map!(c => c.type).equal([
+  assert(containers.allThatContain("shiny gold").map!"a.type".equal([
     "bright white", "dark orange", "light red", "muted yellow"
   ]));
 }
 
-void main() {}
+void main() {
+  import std.algorithm : map, splitter;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto containers = data.map!parseContainer;
+  containers.allThatContain("shiny gold").length.writeln;
+}
