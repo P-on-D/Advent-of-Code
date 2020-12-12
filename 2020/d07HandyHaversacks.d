@@ -1,8 +1,17 @@
 // Advent of Code 2020 https://adventofcode.com/2020/day/7
 // Day 7: Handy Haversacks
 
-struct Contains { uint count; string type; }
-struct Container { string type; Contains[] contains; }
+struct Content { uint count; string type; }
+struct Container {
+  string type;
+  Content[] content;
+
+  bool contains(string type) {
+    import std.algorithm : canFind;
+
+    return content.canFind!(c => c.type == type);
+  }
+}
 
 Container parseContainer(string input) {
   import std.conv : to;
@@ -19,15 +28,35 @@ Container parseContainer(string input) {
     container.type = outer[1];
 
     foreach(inner; outer[2].matchAll(containsRx)) {
-      container.contains ~= Contains(to!uint(inner[1]), inner[2]);
+      container.content ~= Content(to!uint(inner[1]), inner[2]);
     }
   }
 
   return container;
 }
 
+auto thatContain(R)(R containers, string type) {
+  import std.algorithm : filter;
+
+  return containers.filter!(c => c.contains(type));
+}
+
+Container[] allThatContain(R)(R containers, string type) {
+  import std.algorithm : map, sort, uniq;
+  import std.array : array, join;
+
+  Container[] canContain = containers.thatContain(type).array;
+
+  if (canContain.length) {
+    canContain ~= canContain.map!(c => containers.allThatContain(c.type)).join;
+  }
+
+  return canContain.sort!"a.type < b.type".uniq!"a.type == b.type".array;
+}
+
 unittest {
-  import std.algorithm : equal, map;
+  import std.algorithm : equal, map, sort, uniq;
+  import std.array : array;
 
   auto input = [
     "light red bags contain 1 bright white bag, 2 muted yellow bags.",
@@ -42,15 +71,25 @@ unittest {
   ];
 
   assert(input.map!parseContainer.equal([
-    Container("light red", [Contains(1, "bright white"), Contains(2, "muted yellow")]),
-    Container("dark orange", [Contains(3, "bright white"), Contains(4, "muted yellow")]),
-    Container("bright white", [Contains(1, "shiny gold")]),
-    Container("muted yellow", [Contains(2, "shiny gold"), Contains(9, "faded blue")]),
-    Container("shiny gold", [Contains(1, "dark olive"), Contains(2, "vibrant plum")]),
-    Container("dark olive", [Contains(3, "faded blue"), Contains(4, "dotted black")]),
-    Container("vibrant plum", [Contains(5, "faded blue"), Contains(6, "dotted black")]),
+    Container("light red", [Content(1, "bright white"), Content(2, "muted yellow")]),
+    Container("dark orange", [Content(3, "bright white"), Content(4, "muted yellow")]),
+    Container("bright white", [Content(1, "shiny gold")]),
+    Container("muted yellow", [Content(2, "shiny gold"), Content(9, "faded blue")]),
+    Container("shiny gold", [Content(1, "dark olive"), Content(2, "vibrant plum")]),
+    Container("dark olive", [Content(3, "faded blue"), Content(4, "dotted black")]),
+    Container("vibrant plum", [Content(5, "faded blue"), Content(6, "dotted black")]),
     Container("faded blue", []),
     Container("dotted black", [])
+  ]));
+
+  auto containers = input.map!parseContainer;
+
+  assert(containers.thatContain("shiny gold").map!(c => c.type).array.sort.equal([
+    "bright white", "muted yellow"
+  ]));
+
+  assert(containers.allThatContain("shiny gold").map!(c => c.type).equal([
+    "bright white", "dark orange", "light red", "muted yellow"
   ]));
 }
 
