@@ -11,8 +11,21 @@ bool validNext(uint preambleLen, R)(R given, int testValue) {
     .canFind(testValue);
 }
 
+int findInvalid(uint preambleLen, R)(R given) {
+  import std.range : slide;
+
+  foreach(window; given.slide(preambleLen+1)) {
+    if (!window[0..$-1].validNext!preambleLen(window[$-1])) {
+      return window[$-1];
+    }
+  }
+  assert(0);
+}
+
 unittest {
-  auto given = [20, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25];
+  auto given = [
+    20, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25
+  ];
   assert(given.validNext!25(26));
   assert(given.validNext!25(49));
   assert(!given.validNext!25(100));
@@ -24,6 +37,11 @@ unittest {
   assert(!given.validNext!25(65));
   assert(given.validNext!25(64));
   assert(given.validNext!25(66));
+
+  assert(
+    [35, 20, 15, 25, 47, 40, 62, 55, 65, 95, 102, 117, 150, 182, 127, 219, 299, 277, 309, 576]
+    .findInvalid!5 == 127
+  );
 }
 
 void main() {}
