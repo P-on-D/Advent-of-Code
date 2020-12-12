@@ -22,6 +22,22 @@ auto findInvalid(uint preambleLen, R)(R given) {
   assert(0);
 }
 
+auto encryptionWeakness(uint preambleLen, R)(R given) {
+  import std.algorithm : maxElement, minElement, sum;
+  import std.range : slide;
+
+  auto invalid = given.findInvalid!preambleLen;
+
+  foreach(windowSize; 2..given.length) {
+    foreach(window; given.slide(windowSize)) {
+      if (window.sum == invalid) {
+        return window.minElement + window.maxElement;
+      }
+    }
+  }
+  assert(0);
+}
+
 unittest {
   auto given = [
     20, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25
@@ -38,10 +54,12 @@ unittest {
   assert(given.validNext!25(64));
   assert(given.validNext!25(66));
 
-  assert(
-    [35, 20, 15, 25, 47, 40, 62, 55, 65, 95, 102, 117, 150, 182, 127, 219, 299, 277, 309, 576]
-    .findInvalid!5 == 127
-  );
+  given = [
+    35, 20, 15, 25, 47, 40, 62, 55, 65, 95, 102, 117, 150, 182, 127, 219, 299, 277, 309, 576
+  ];
+  assert(given.findInvalid!5 == 127);
+
+  assert(given.encryptionWeakness!5 == 62);
 }
 
 void main() {
