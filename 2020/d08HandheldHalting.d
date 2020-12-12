@@ -1,6 +1,8 @@
 // Advent of Code 2020 https://adventofcode.com/2020/day/8
 // Day 8: Handheld Halting
 
+import std.typecons : Tuple, tuple;
+
 enum Op { Nop, Acc, Jmp };
 struct Instr { Op op; int arg; }
 
@@ -17,11 +19,11 @@ Instr parseInstruction(string line) {
   );
 }
 
-auto haltingExecutor(Instr [] program) {
+Tuple!(int, bool) haltingExecutor(Instr [] program) {
   int PC, acc;
   bool[] visited = new bool[program.length];
 
-  while(!visited[PC]) {
+  while(PC < program.length && !visited[PC]) {
     visited[PC] = true;
 
     final switch (program[PC].op) {
@@ -31,7 +33,19 @@ auto haltingExecutor(Instr [] program) {
     }
   }
 
-  return acc;
+  return tuple(acc, PC >= program.length);
+}
+
+auto fixingExecutor(Instr [] program) {
+  foreach(PC, instr; program) {
+    if (instr.op == Op.Nop || instr.op == Op.Jmp) {
+      auto mutated = program.dup;
+      mutated[PC].op = instr.op == Op.Nop ? Op.Jmp : Op.Nop;
+      auto result = mutated.haltingExecutor;
+      if (result[1]) return result[0];
+    }
+  }
+  assert(0);
 }
 
 unittest {
@@ -62,7 +76,8 @@ unittest {
     Instr(Op.Acc, 6)
   ]));
 
-  assert(input.map!parseInstruction.array.haltingExecutor == 5);
+  assert(input.map!parseInstruction.array.haltingExecutor == tuple(5, false));
+  assert(input.map!parseInstruction.array.fixingExecutor == 8);
 }
 
 void main() {
@@ -73,5 +88,5 @@ void main() {
 
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
   auto program = data.map!parseInstruction.array;
-  program.haltingExecutor.writeln;
+  program.haltingExecutor[0].writeln;
 }
