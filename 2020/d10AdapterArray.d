@@ -18,7 +18,7 @@ auto diffs(R)(R adapters) {
 auto counts(R)(R diffs) {
   import std.algorithm : count;
 
-  return [diffs.count!"a ==1", diffs.count!"a == 3"];
+  return [diffs.count!"a == 1", diffs.count!"a == 3"];
 }
 
 unittest {
@@ -33,4 +33,14 @@ unittest {
     .adapterOrder.diffs.counts.equal([22, 10]));
 }
 
-void main() {}
+void main() {
+  import std.algorithm : fold, map, splitter;
+  import std.array : array;
+  import std.conv : to;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.map!(to!int).array;
+  input.adapterOrder.diffs.counts.fold!"a * b".writeln;
+}
