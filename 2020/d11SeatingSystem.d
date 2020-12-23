@@ -152,4 +152,21 @@ unittest {
   assert(seatingSystem.seatsOccupied == 37);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : equal, map, splitter;
+  import std.array : array;
+  import std.conv : to;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.map!(to!string).array;
+  auto seatingSystem = SeatingSystem!(string[])(input);
+  string[] prevState;
+
+  do {
+    prevState = seatingSystem.currentState;
+  } while(!prevState.equal(seatingSystem.nextRound));
+
+  seatingSystem.seatsOccupied.writeln;
+}
