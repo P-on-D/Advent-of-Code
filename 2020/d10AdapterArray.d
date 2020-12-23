@@ -70,7 +70,7 @@ auto validArrangements(R)(R orderedAdapters) {
     }
   }
 
-  return groups.map!countValidArrangements.fold!"a * b";
+  return groups.map!countValidArrangements.fold!"a * b"(1UL);
 }
 
 unittest {
@@ -97,4 +97,5 @@ void main() {
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
   auto input = data.map!(to!int).array;
   input.adapterOrder.diffs.counts.fold!"a * b".writeln;
+  input.adapterOrder.validArrangements.writeln;
 }
