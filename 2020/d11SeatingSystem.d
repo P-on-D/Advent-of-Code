@@ -4,11 +4,17 @@
 struct SeatingSystem(R) {
   R currentState;
   ulong width, height;
+  uint occupancyLimit = 4;
 
   this(R input) in (input.length > 0) {
     currentState = input;
     height = currentState.length;
     width = currentState[0].length;
+  }
+
+  this(R input, uint limit) in (input.length > 0) {
+    this(input);
+    occupancyLimit = limit;
   }
 
   R nextRound() {
@@ -21,10 +27,12 @@ struct SeatingSystem(R) {
         char nextCol = currentState[row][col];
 
         if (nextCol != '.') {
-          auto adjOcc = adjacentOccupied(row, col);
+          auto adjOcc = occupancyLimit == 4
+            ? adjacentOccupied(row, col)
+            : visibleOccupied(row, col);
 
           if (isOccupied(row, col)) {
-            if (adjOcc >= 4) nextCol = 'L';
+            if (adjOcc >= occupancyLimit) nextCol = 'L';
           } else {
             if (adjOcc == 0) nextCol = '#';
           }
@@ -61,6 +69,29 @@ struct SeatingSystem(R) {
     }
 
     return occupied;
+  }
+
+  auto visibleOccupied(ulong row, ulong col) {
+    auto occupied = 0;
+
+    foreach(drow; -1..2) {
+      foreach(dcol; -1..2) {
+        if (!(drow == 0 && dcol == 0)) {
+          occupied += canSeeOccupied(row, drow, col, dcol);
+        }
+      }
+    }
+
+    return occupied;
+  }
+
+  auto canSeeOccupied(ulong row, int drow, ulong col, int dcol) {
+    do {
+      row += drow;
+      col += dcol;
+    } while (row < height && col < width && currentState[row][col] == '.');
+
+    return isOccupied(row, col);
   }
 }
 
@@ -150,6 +181,118 @@ unittest {
   ]));
 
   assert(seatingSystem.seatsOccupied == 37);
+
+  seatingSystem = SeatingSystem!(string[])([
+    ".......#.",
+    "...#.....",
+    ".#.......",
+    ".........",
+    "..#L....#",
+    "....#....",
+    ".........",
+    "#........",
+    "...#.....",
+  ], 5);
+
+  assert(seatingSystem.currentState[4][3] == 'L');
+  assert(seatingSystem.currentState[4][2] == '#');
+  assert(seatingSystem.canSeeOccupied(4, 0, 3, -1));
+  assert(seatingSystem.visibleOccupied(4, 3) == 8);
+
+  seatingSystem = SeatingSystem!(string[])([
+    ".##.##.",
+    "#.#.#.#",
+    "##...##",
+    "...L...",
+    "##...##",
+    "#.#.#.#",
+    ".##.##.",
+  ], 5);
+
+  assert(seatingSystem.visibleOccupied(3, 3) == 0);
+
+  seatingSystem = SeatingSystem!(string[])(input, 5);
+
+  assert(seatingSystem.nextRound.equal([
+    "#.##.##.##",
+    "#######.##",
+    "#.#.#..#..",
+    "####.##.##",
+    "#.##.##.##",
+    "#.#####.##",
+    "..#.#.....",
+    "##########",
+    "#.######.#",
+    "#.#####.##",
+  ]));
+
+  assert(seatingSystem.nextRound.equal([
+    "#.LL.LL.L#",
+    "#LLLLLL.LL",
+    "L.L.L..L..",
+    "LLLL.LL.LL",
+    "L.LL.LL.LL",
+    "L.LLLLL.LL",
+    "..L.L.....",
+    "LLLLLLLLL#",
+    "#.LLLLLL.L",
+    "#.LLLLL.L#",
+  ]));
+
+  assert(seatingSystem.nextRound.equal([
+    "#.L#.##.L#",
+    "#L#####.LL",
+    "L.#.#..#..",
+    "##L#.##.##",
+    "#.##.#L.##",
+    "#.#####.#L",
+    "..#.#.....",
+    "LLL####LL#",
+    "#.L#####.L",
+    "#.L####.L#",
+  ]));
+
+  assert(seatingSystem.nextRound.equal([
+    "#.L#.L#.L#",
+    "#LLLLLL.LL",
+    "L.L.L..#..",
+    "##LL.LL.L#",
+    "L.LL.LL.L#",
+    "#.LLLLL.LL",
+    "..L.L.....",
+    "LLLLLLLLL#",
+    "#.LLLLL#.L",
+    "#.L#LL#.L#",
+  ]));
+
+  assert(seatingSystem.nextRound.equal([
+    "#.L#.L#.L#",
+    "#LLLLLL.LL",
+    "L.L.L..#..",
+    "##L#.#L.L#",
+    "L.L#.#L.L#",
+    "#.L####.LL",
+    "..#.#.....",
+    "LLL###LLL#",
+    "#.LLLLL#.L",
+    "#.L#LL#.L#",
+
+  ]));
+
+  assert(seatingSystem.nextRound.equal([
+    "#.L#.L#.L#",
+    "#LLLLLL.LL",
+    "L.L.L..#..",
+    "##L#.#L.L#",
+    "L.L#.LL.L#",
+    "#.LLLL#.LL",
+    "..#.L.....",
+    "LLL###LLL#",
+    "#.LLLLL#.L",
+    "#.L#LL#.L#",
+  ]));
+
+  assert(seatingSystem.seatsOccupied == 26);
 }
 
 void main() {
