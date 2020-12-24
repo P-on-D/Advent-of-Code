@@ -38,6 +38,43 @@ auto navigate(string[] input) {
   return abs(x) + abs(y);
 }
 
+auto waypoint(string[] input) {
+  import std.algorithm : each, swap;
+  import std.conv : to;
+  import std.math : abs;
+
+  int x, y, wx = 10, wy = -1, dir = 90;
+
+  void rotate(uint value) {
+    switch(value) {
+      default: assert(0);
+      case 90: swap(wx, wy); wx = -wx; break;
+      case 180: wx = -wx; wy = -wy; break;
+      case 270: swap(wx, wy); wy = -wy; break;
+    }
+  }
+
+  void step(string instr) {
+    char action = instr[0];
+    uint value = to!uint(instr[1..$]);
+
+    switch(action) {
+      default: assert(0);
+      case 'N': wy -= value; break;
+      case 'S': wy += value; break;
+      case 'E': wx += value; break;
+      case 'W': wx -= value; break;
+      case 'L': rotate(360 - value); break;
+      case 'R': rotate(value); break;
+      case 'F': x += wx * value; y += wy * value; break;
+    }
+  }
+
+  input.each!step;
+
+  return abs(x) + abs(y);
+}
+
 unittest {
   auto input = [
     "F10",
@@ -48,6 +85,7 @@ unittest {
   ];
 
   assert(input.navigate == 25);
+  assert(input.waypoint == 286);
 }
 
 void main() {
