@@ -99,4 +99,5 @@ void main() {
   auto input = data.map!(to!string).array;
 
   input.navigate.writeln;
+  input.waypoint.writeln;
 }
