@@ -312,4 +312,12 @@ void main() {
   } while(!prevState.equal(seatingSystem.nextRound));
 
   seatingSystem.seatsOccupied.writeln;
+
+  seatingSystem = SeatingSystem!(string[])(input, 5);
+
+  do {
+    prevState = seatingSystem.currentState;
+  } while(!prevState.equal(seatingSystem.nextRound));
+
+  seatingSystem.seatsOccupied.writeln;
 }
