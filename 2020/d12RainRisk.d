@@ -50,4 +50,15 @@ unittest {
   assert(input.navigate == 25);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : map, splitter;
+  import std.array : array;
+  import std.conv : to;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto input = data.map!(to!string).array;
+
+  input.navigate.writeln;
+}
