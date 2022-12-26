@@ -58,15 +58,24 @@ unittest {
 }
 
 void main() {
-  import std.algorithm : map, sum, splitter;
+  import std.algorithm : fold, map, sum, splitter;
   import std.array : join;
   import std.path : setExtension;
+  import std.range : front, chunks;
   import std.stdio;
 
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
 
   data.map!(input => commonBetweenRucksacks(input[0..$/2], input[$/2..$]))
     .join
+    .map!toPriority
+    .sum
+    .writeln
+  ;
+
+  data.chunks(3)
+    .map!(fold!commonBetweenRucksacks)
+    .map!front
     .map!toPriority
     .sum
     .writeln
