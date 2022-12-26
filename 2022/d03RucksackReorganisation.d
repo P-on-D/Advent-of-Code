@@ -7,9 +7,9 @@ auto toRucksack(string items) {
   return items.to!(dchar[]).sort.uniq;
 }
 
-auto commonBetweenRucksacks(string rucksack1, string rucksack2) {
-  import std.algorithm, std.array;
-  return toRucksack(rucksack1).setIntersection(toRucksack(rucksack2)).array;
+string commonBetweenRucksacks(string rucksack1, string rucksack2) {
+  import std.algorithm, std.array, std.conv;
+  return toRucksack(rucksack1).setIntersection(toRucksack(rucksack2)).to!string;
 }
 
 auto toPriority(dchar x) {
@@ -29,7 +29,7 @@ unittest {
   auto firstHalfFirstRucksack = sampleData1[0][0..$/2];
   auto secondHalfFirstRucksack = sampleData1[0][$/2..$];
 
-  import std.array, std.algorithm;
+  import std.array, std.algorithm, std.conv, std.range;
 
   assert(firstHalfFirstRucksack.length == secondHalfFirstRucksack.length);
   assert(commonBetweenRucksacks(firstHalfFirstRucksack, secondHalfFirstRucksack)
@@ -43,6 +43,18 @@ unittest {
     .map!toPriority
     .sum
     == 157);
+
+  assert(commonBetweenRucksacks(
+    sampleData1[0],
+    commonBetweenRucksacks(
+      sampleData1[1],
+      sampleData1[2]
+    )
+  ) == "r");
+
+  assert(sampleData1.chunks(3)[1].fold!commonBetweenRucksacks == "Z");
+
+  assert(sampleData1.chunks(3).map!(fold!commonBetweenRucksacks).map!("a[0]").map!toPriority.sum == 70);
 }
 
 void main() {
