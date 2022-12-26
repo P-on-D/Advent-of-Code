@@ -50,4 +50,5 @@ void main() {
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
 
   data.map!parse.count!fullyContained.writeln;
+  data.map!parse.count!overlaps.writeln;
 }
