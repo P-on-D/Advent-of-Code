@@ -46,4 +46,5 @@ void main() {
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
 
   data.map!(round => scoreTable[round]).sum.writeln;
+  data.map!(round => decryptedTable[round]).sum.writeln;
 }
