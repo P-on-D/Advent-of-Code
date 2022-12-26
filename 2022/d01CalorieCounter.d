@@ -19,7 +19,7 @@ unittest {
     "10000"
   ];
 
-  import std.algorithm, std.array, std.conv;
+  import std.algorithm, std.array, std.conv, std.range;
 
   auto input1 = sampleData1.split("");
 
@@ -38,6 +38,14 @@ unittest {
   auto largestCalories = elvenCalories.maxElement;
 
   assert(largestCalories == 24000);
+
+  auto topThreeCaloriesSum = elvenCalories
+    .sort!"a > b"
+    .take(3)
+    .sum
+  ;
+
+  assert(topThreeCaloriesSum == 45000);
 }
 
 void main() {
