@@ -18,6 +18,14 @@ bool fullyContained(Assignment a) {
   ;
 }
 
+bool overlaps(Assignment a) {
+  return (a.fst.fst >= a.snd.fst && a.fst.fst <= a.snd.snd)
+      || (a.fst.snd >= a.snd.fst && a.fst.snd <= a.snd.snd)
+      || (a.snd.fst >= a.fst.fst && a.snd.fst <= a.fst.snd)
+      || (a.snd.snd >= a.fst.fst && a.snd.snd <= a.fst.snd)
+  ;
+}
+
 unittest {
   auto sampleData1 = [
     "2-4,6-8",
@@ -31,6 +39,7 @@ unittest {
   import std.algorithm, std.format, std.stdio;
 
   assert(sampleData1.map!parse.count!fullyContained == 2);
+  assert(sampleData1.map!parse.count!overlaps == 4);
 }
 
 void main() {
