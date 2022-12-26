@@ -24,4 +24,12 @@ unittest {
   assert(sampleData1.map!(round => scoreTable[round]).sum == 15);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : map, sum, splitter;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+
+  data.map!(round => scoreTable[round]).sum.writeln;
+}
