@@ -6,8 +6,9 @@ alias LongCode = IntCodeT!long;
 struct IntCodeT(T) {
   alias Word = T;
 
-  this(Word[] program) {
+  this(Word[] program, uint capacity = 65536) {
     memory = program.dup;
+    memory.length = capacity;
   }
 
   Word[] memory;
@@ -20,59 +21,119 @@ struct IntCodeT(T) {
   bool halted = true;
   bool feedback = false;
 
-  enum Opcode {
-    Add = 1, Mul
-  , In = 3, Out
-  , JT = 5, JF
-  , Lt = 7, Eq
-  , Rel = 9
-  , End = 99
+  struct Opcode {
+    enum {
+      Add = 1, Mul
+    , In = 3, Out
+    , JT = 5, JF
+    , Lt = 7, Eq
+    , Rel = 9
+    , End = 99
+    }
   }
 
-  enum Mode { Pos, Imm, Rel }
+  struct Mode {
+    enum { Pos, Imm, Rel }
+  }
 
-  bool execute() {
-    import std.conv, std.range;
+  struct Access {
+    enum { None, Load, Store }
+  }
 
+  void execute() {
+    import std.array, std.conv, std.range;
+
+    string cases(string op, uint loads, uint store, string executor) {
+      import std.format;
+
+      auto accs = [Access.None, Access.None, Access.None];
+      auto modes = [[0], [0], [0]];
+
+      string generate(int a, int m, int arg) {
+        if (a == Access.None) return "";
+
+        string p = "memory[PC+%d]".format(arg);
+        string access;
+
+        if (a == Access.Load) {
+          switch (m) {
+            case Mode.Pos: access = "memory["~p~"]"; break;
+            case Mode.Imm: access = p; break;
+            case Mode.Rel: access = "memory[RB+"~p~"]"; break;
+            default: break;
+          }
+        } else {
+          switch (m) {
+            case Mode.Pos: access = p; break;
+            case Mode.Rel: access = "RB+"~p; break;
+            default: break;
+          }
+        }
+
+        return "auto a%d = %s;".format(arg, access);
+      }
+
+      if (store) {
+        accs[store-1] = Access.Store;
+        modes[store-1] = [0, 2];
+      }
+
+      if (loads >= 1) {
+        accs[0] = Access.Load;
+        modes[0] = [0, 1, 2];
+      }
+
+      if(loads == 2) {
+        accs[1] = Access.Load;
+        modes[1] = [0, 1, 2];
+      }
+
+      string output;
+
+      foreach(m1; modes[0]) {
+        foreach(m2; modes[1]) {
+          foreach(m3; modes[2]) {
+            auto offset = 10000 * m3 + 1000 * m2 + 100 * m1;
+
+            output ~= "case %d + %s:".format(offset, op);
+            output ~= generate(accs[0], m1, 1);
+            output ~= generate(accs[1], m2, 2);
+            output ~= generate(accs[2], m3, 3);
+            output ~= executor;
+          }
+        }
+      }
+
+      return output;
+    }
+
+  AndCarryOn:
     auto opcode = memory[PC];
-    Mode m1 = to!Mode((opcode / 100) % 10);
-    Mode m2 = to!Mode((opcode / 1000) % 10);
-    Mode m3 = to!Mode((opcode / 10000) % 10);
 
-    Word ld(Addr n, Mode mode) {
-      auto param = memory[PC+n];
+    switch (opcode) with (Opcode) {
+      case End: halted = true; return;
 
-      final switch (mode) {
-        case Mode.Pos: if (memory.length <= param) memory.length = param+1; return memory[param];
-        case Mode.Imm: return param;
-        case Mode.Rel: if (memory.length <= RB+param) memory.length = RB+param+1; return memory[RB+param];
-      }
-    }
+      mixin(cases( "JT",  2, 0, q{ PC = (a1 != 0) ? a2 : (PC + 3); goto AndCarryOn; } ));
+      mixin(cases( "JF",  2, 0, q{ PC = (a1 == 0) ? a2 : (PC + 3); goto AndCarryOn; } ));
 
-    void st(Addr n, Mode mode, Word v) {
-      auto param = memory[PC+n];
+      mixin(cases( "Add", 2, 3, q{ memory[a3] = (a1 + a2); PC = PC + 4; goto AndCarryOn; } ));
+      mixin(cases( "Mul", 2, 3, q{ memory[a3] = (a1 * a2); PC = PC + 4; goto AndCarryOn; } ));
+      mixin(cases( "Lt",  2, 3, q{ memory[a3] = (a1 < a2); PC = PC + 4; goto AndCarryOn; } ));
+      mixin(cases( "Eq",  2, 3, q{ memory[a3] = (a1 == a2); PC = PC + 4; goto AndCarryOn; } ));
 
-      final switch (mode) {
-        case Mode.Pos: if (memory.length <= param) memory.length = param+1; memory[param] = v; return;
-        case Mode.Imm: return;
-        case Mode.Rel: if (memory.length <= RB+param) memory.length = RB+param+1; memory[RB+param] = v; return;
-      }
-    }
+      mixin(cases( "In",  0, 1, q{ if (input.empty) return;
+                                   memory[a1] = input.front; input.popFront; PC = PC + 2; goto AndCarryOn; } ));
 
-    Opcode op = to!Opcode(opcode % 100);
+      mixin(cases( "Out", 1, 0, q{ output ~= a1; PC = PC + 2;
+                                   if (feedback) return; else goto AndCarryOn; } ));
 
-    final switch (op) {
-      case Opcode.JT:  PC = (ld(1, m1) != 0) ? ld(2, m2) : (PC + 3); return true;
-      case Opcode.JF:  PC = (ld(1, m1) == 0) ? ld(2, m2) : (PC + 3); return true;
-      case Opcode.Add: st(3, m3, ld(1, m1) + ld(2, m2)); PC = PC + 4; return true;
-      case Opcode.Mul: st(3, m3, ld(1, m1) * ld(2, m2)); PC = PC + 4; return true;
-      case Opcode.Lt:  st(3, m3, ld(1, m1) < ld(2, m2)); PC = PC + 4; return true;
-      case Opcode.Eq:  st(3, m3, ld(1, m1) == ld(2, m2)); PC = PC + 4; return true;
-      case Opcode.In:  if (input.empty) return false;
-                       st(1, m1, input.front); input.popFront; PC = PC + 2; return true;
-      case Opcode.Out: output ~= ld(1, m1); PC = PC + 2; return !feedback;
-      case Opcode.Rel: RB += ld(1, m1); PC = PC + 2; return true;
-      case Opcode.End: halted = true; return false;
+      mixin(cases( "Rel", 1, 0, q{ RB += a1; PC = PC + 2; goto AndCarryOn; } ));
+
+      default:
+        PC = PC + 1;
+        import std.stdio;
+        writefln("Opcode %s at %s not understood", opcode, PC);
+        return;
     }
   }
 
@@ -83,7 +144,7 @@ struct IntCodeT(T) {
     RB = 0;
     halted = false;
 
-    while(execute()) {}
+    execute;
 
     return output;
   }
@@ -93,7 +154,7 @@ struct IntCodeT(T) {
     if (halted) return output;
     if (feedback) output = [];
 
-    while(execute()) {}
+    execute;
 
     return output;
   }
@@ -107,7 +168,7 @@ struct IntCodeT(T) {
 unittest {
   IntCode ic = IntCode([1,9,10,3,2,3,11,0,99,30,40,50]);
   ic.run();
-  assert(ic.memory == [3500,9,10,70,2,3,11,0,99,30,40,50]);
+  assert(ic.memory[0..12] == [3500,9,10,70,2,3,11,0,99,30,40,50]);
 
   ic.memory = [1, 0, 0, 0, 99];
   ic.run();
