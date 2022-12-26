@@ -12,6 +12,19 @@ enum scoreTable = [
   "B Z": 3 + 6,
   "C Z": 3 + 3,
 ];
+
+enum decryptedTable = [
+  "A X": 3,
+  "B X": 1,
+  "C X": 2,
+  "A Y": 3 + 1,
+  "B Y": 3 + 2,
+  "C Y": 3 + 3,
+  "A Z": 6 + 2,
+  "B Z": 6 + 3,
+  "C Z": 6 + 1,
+];
+
 unittest {
   auto sampleData1 = [
     "A Y",
@@ -22,6 +35,7 @@ unittest {
   import std.algorithm;
 
   assert(sampleData1.map!(round => scoreTable[round]).sum == 15);
+  assert(sampleData1.map!(round => decryptedTable[round]).sum == 12);
 }
 
 void main() {
