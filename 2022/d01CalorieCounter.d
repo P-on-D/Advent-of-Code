@@ -49,20 +49,29 @@ unittest {
 }
 
 void main() {
-  import std.algorithm : map, sum, splitter, maxElement;
+  import std.algorithm : map, sum, sort, splitter, maxElement;
   import std.array : array, split;
   import std.conv : to;
   import std.path : setExtension;
+  import std.range : take;
   import std.stdio;
 
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
 
-  auto largestCalories = data
+  auto elvenCalories = data
     .array
     .split("")
     .map!(map!(to!ulong))
     .map!sum
-    .maxElement
   ;
-  writeln(largestCalories);
+
+  writeln(elvenCalories.maxElement);
+
+  auto topThreeCaloriesSum = elvenCalories
+    .array
+    .sort!"a > b"
+    .take(3)
+    .sum
+  ;
+  writeln(topThreeCaloriesSum);
 }
