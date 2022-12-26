@@ -41,4 +41,20 @@ unittest {
 }
 
 void main() {
+  import std.algorithm : map, sum, splitter, maxElement;
+  import std.array : array, split;
+  import std.conv : to;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+
+  auto largestCalories = data
+    .array
+    .split("")
+    .map!(map!(to!ulong))
+    .map!sum
+    .maxElement
+  ;
+  writeln(largestCalories);
 }
