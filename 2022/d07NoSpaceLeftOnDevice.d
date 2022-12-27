@@ -9,7 +9,7 @@ struct Entry {
   Entry[] children;
 }
 
-Entry processTranscript(string[] transcript) {
+Entry processTranscript(T)(T transcript) {
   import std.algorithm : find, map;
   import std.array : split;
   import std.conv : to;
@@ -114,4 +114,18 @@ unittest {
   assert(root.findDirectories.map!directorySize.filter!"a <= 100000".sum == 95437);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : filter, map, splitter, sum;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+
+  data
+    .processTranscript
+    .findDirectories
+    .map!directorySize
+    .filter!"a <= 100000"
+    .sum
+    .writeln;
+}
