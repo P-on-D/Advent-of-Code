@@ -1,6 +1,8 @@
 // Advent of Code 2022 https://adventofcode.com/2022/day/7
 // Day 7: No Space Left On Device
 
+enum requiredCapacity = 30_000_000;
+
 struct Entry {
   Entry *parent;
   string name;
@@ -103,7 +105,7 @@ unittest {
 
   Entry root = sampleData1.processTranscript;
 
-  import std.algorithm, std.array;
+  import std.algorithm, std.array, std.range;
 
   assert(root.directorySize == 48381165);
   assert(root.findDirectories.map!"a.name".array == ["/", "a", "e", "d"]);
@@ -111,7 +113,11 @@ unittest {
   assert(root.findDirectories.find!"a.name == \"a\"".front.directorySize == 94853);
   assert(root.findDirectories.find!"a.name == \"d\"".front.directorySize == 24933642);
 
-  assert(root.findDirectories.map!directorySize.filter!"a <= 100000".sum == 95437);
+  auto allDirectorySizes = root.findDirectories.map!directorySize;
+  assert(allDirectorySizes.filter!"a <= 100000".sum == 95437);
+
+  auto spaceToFind = allDirectorySizes.front - requiredCapacity;
+  assert(allDirectorySizes.filter!(a => a >= spaceToFind).array.sort.front == 24933642);
 }
 
 void main() {
