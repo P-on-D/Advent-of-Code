@@ -118,4 +118,8 @@ void main() {
   procedure.each!(step => stacks.applyStep(step));
 
   stacks.map!back.writeln;
+
+  stacks = dataSplit[0].parseStackDrawing;
+  procedure.each!(step => stacks.applyStepAtomic(step));
+  stacks.map!back.writeln;
 }
