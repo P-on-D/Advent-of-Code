@@ -27,4 +27,11 @@ unittest {
   assert("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw".firstMarkerPos == 11);
 }
 
-void main() {}
+void main() {
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt"));
+
+  data.firstMarkerPos.writeln;
+}
