@@ -8,14 +8,14 @@ bool isMarkerString(T)(T candidate) {
   return candidate.to!(dchar[]).sort.isStrictlyMonotonic;
 }
 
-size_t firstMarkerPos(T)(T input) {
+size_t firstMarkerPos(T)(T input, size_t windowSize = 4) {
   import std.algorithm : countUntil;
   import std.range : slide;
 
   return input
-    .slide(4)
+    .slide(windowSize)
     .countUntil!isMarkerString
-    + 4;
+    + windowSize;
 }
 
 unittest {
@@ -25,6 +25,12 @@ unittest {
   assert("nppdvjthqldpwncqszvftbrmjlhg".firstMarkerPos == 6);
   assert("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg".firstMarkerPos == 10);
   assert("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw".firstMarkerPos == 11);
+
+  assert("mjqjpqmgbljsphdztnvjfqwrcgsmlb".firstMarkerPos(14) == 19);
+  assert("bvwbjplbgvbhsrlpgdmjqwftvncz".firstMarkerPos(14) == 23);
+  assert("nppdvjthqldpwncqszvftbrmjlhg".firstMarkerPos(14) == 23);
+  assert("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg".firstMarkerPos(14) == 29);
+  assert("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw".firstMarkerPos(14) == 26);
 }
 
 void main() {
