@@ -51,6 +51,12 @@ auto applyStep(char[][] stacks, ProcedureStep step) {
   return stacks;
 }
 
+auto applyStepAtomic(char[][] stacks, ProcedureStep step) {
+  stacks[step.to-1] ~= stacks[step.from-1][$-step.howMany..$];
+  stacks[step.from-1].length -= step.howMany;
+  return stacks;
+}
+
 unittest {
   auto sampleData1 = [
     "    [D]    ",
@@ -90,6 +96,10 @@ unittest {
   assert(stacks.applyStep(steps[3]) == ["C", "M", "PDNZ"]);
 
   assert(stacks.map!back.array == "CMZ");
+
+  stacks = stackDrawing.parseStackDrawing;
+  steps.each!(step => stacks.applyStepAtomic(step));
+  assert(stacks.map!back.array == "MCD");
 }
 
 void main() {
