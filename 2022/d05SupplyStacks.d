@@ -92,4 +92,20 @@ unittest {
   assert(stacks.map!back.array == "CMZ");
 }
 
-void main() {}
+void main() {
+  import std.algorithm : each, map, splitter;
+  import std.array : array, split;
+  import std.path : setExtension;
+  import std.range : back;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+  auto dataSplit = data.array.split("");
+
+  auto stacks = dataSplit[0].parseStackDrawing;
+  auto procedure = dataSplit[1].map!toProcedureStep;
+
+  procedure.each!(step => stacks.applyStep(step));
+
+  stacks.map!back.writeln;
+}
