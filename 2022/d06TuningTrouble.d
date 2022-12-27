@@ -40,4 +40,5 @@ void main() {
   auto data = import(__FILE__.setExtension("txt"));
 
   data.firstMarkerPos.writeln;
+  data.firstMarkerPos(14).writeln;
 }
