@@ -62,4 +62,12 @@ unittest {
   assert(grid.totalVisible == 21);
 }
 
-void main() {}
+void main() {
+  import std.algorithm : splitter;
+  import std.path : setExtension;
+  import std.stdio;
+
+  auto data = import(__FILE__.setExtension("txt")).splitter("\n");
+
+  data.toGrid.totalVisible.writeln;
+}
