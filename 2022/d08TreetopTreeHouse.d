@@ -104,4 +104,5 @@ void main() {
   auto data = import(__FILE__.setExtension("txt")).splitter("\n");
 
   data.toGrid.totalVisible.writeln;
+  data.toGrid.bestScenicScore.writeln;
 }
