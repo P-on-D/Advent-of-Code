@@ -36,6 +36,36 @@ size_t totalVisible(ubyte[][] grid) {
         .count!(t => grid.visible(t[1], t[0]));
 }
 
+auto countUntilInclusive(alias pred, R)(R range) {
+  size_t count = 0;
+  foreach(r; range) {
+    count++;
+    if (pred(r)) break;
+  }
+  return count;
+}
+
+auto scenicScore(ubyte[][] grid, long x, long y) {
+  import std.range : iota;
+
+  auto height = grid[y][x];
+
+  return iota(x-1, -1, -1).countUntilInclusive!(x => grid[y][x] >= height)
+       * iota(x+1, grid[0].length).countUntilInclusive!(x => grid[y][x] >= height)
+       * iota(y-1, -1, -1).countUntilInclusive!(y => grid[y][x] >= height)
+       * iota(y+1, grid.length).countUntilInclusive!(y => grid[y][x] >= height)
+  ;
+}
+
+auto bestScenicScore(ubyte[][] grid) {
+  import std.algorithm : cartesianProduct, map, maxElement;
+  import std.range : iota;
+
+  return cartesianProduct(iota(1, grid.length-1), iota(1, grid[0].length-1))
+    .map!(t => grid.scenicScore(t[1], t[0]))
+    .maxElement;
+}
+
 unittest {
   auto sampleData1 = [
     "30373",
@@ -60,6 +90,10 @@ unittest {
   assert(!grid.visible(3, 3));
 
   assert(grid.totalVisible == 21);
+
+  assert(grid.scenicScore(2, 1) == 4);
+  assert(grid.scenicScore(2, 3) == 8);
+  assert(grid.bestScenicScore == 8);
 }
 
 void main() {
